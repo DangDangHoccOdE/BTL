@@ -1,12 +1,13 @@
 /* Reset and basic styles */
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f9;
+    font-family: 'Arial', sans-serif;
+    background-color: #e9ecef;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
     margin: 0;
+    padding: 0;
 }
 
 /* Container styling */
@@ -14,58 +15,75 @@ body {
     background-color: #fff;
     max-width: 400px;
     width: 100%;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
     text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.recharge-container:hover {
+    transform: translateY(-5px);
 }
 
 /* Heading styling */
 .recharge-container h2 {
-    color: #333;
-    margin-bottom: 20px;
-    font-size: 24px;
+    color: #343a40;
+    margin-bottom: 25px;
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: 1px;
 }
 
 /* Label styling */
 .recharge-form label {
     font-size: 16px;
-    color: #333;
+    color: #495057;
     display: block;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 /* Select dropdown styling */
 .recharge-form select {
     width: 100%;
-    padding: 10px;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-    margin-bottom: 20px;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #ced4da;
+    margin-bottom: 25px;
     font-size: 16px;
-    background-color: #fff;
+    color: #495057;
+    background-color: #f8f9fa;
+    transition: border-color 0.3s ease;
+}
+
+.recharge-form select:focus {
+    border-color: #80bdff;
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 }
 
 /* Button styling */
 .recharge-form button {
     width: 100%;
-    padding: 10px;
+    padding: 12px;
     background-color: #28a745;
     color: #fff;
     border: none;
-    border-radius: 4px;
-    font-size: 16px;
+    border-radius: 6px;
+    font-size: 18px;
+    font-weight: bold;
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    transition: background-color 0.3s ease, transform 0.3s ease;
 }
 
 .recharge-form button:hover {
     background-color: #218838;
+    transform: translateY(-2px);
 }
 
 /* Text paragraph styling */
 p {
     font-size: 16px;
-    color: #555;
+    color: #6c757d;
     margin: 10px 0;
 }
