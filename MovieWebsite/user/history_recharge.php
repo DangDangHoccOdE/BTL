@@ -31,8 +31,10 @@ $params[] = $offset;
 // Chuẩn bị câu truy vấn
 $stmt = mysqli_prepare($conn, $sql);
 
-// Gán tham số cho câu truy vấn
-mysqli_stmt_bind_param($stmt, str_repeat("s", count($params)), ...$params);
+// Gán tham số cho câu truy vấn nếu có
+if (count($params) > 0) {
+    mysqli_stmt_bind_param($stmt, str_repeat("s", count($params)), ...$params);
+}
 
 // Thực thi câu truy vấn
 mysqli_stmt_execute($stmt);
@@ -53,11 +55,17 @@ if ($filter_amount) {
 }
 
 $total_stmt = mysqli_prepare($conn, $total_sql);
-mysqli_stmt_bind_param($total_stmt, str_repeat("s", count($total_params)), ...$total_params);
+
+// Gán tham số cho câu truy vấn nếu có
+if (count($total_params) > 0) {
+    mysqli_stmt_bind_param($total_stmt, str_repeat("s", count($total_params)), ...$total_params);
+}
+
 mysqli_stmt_execute($total_stmt);
 $total_result = mysqli_stmt_get_result($total_stmt);
 $total_row = mysqli_fetch_assoc($total_result);
 $total_pages = ceil($total_row['total'] / $limit);
+
 ?>
 <!DOCTYPE html>
 <html lang="en">

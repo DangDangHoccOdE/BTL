@@ -27,7 +27,7 @@ session_start();
                 }
               }
               echo"<li class='nav-item'> <a href='account.php' class='nav-link'>Tài khoản</a> </li>
-                  <li class='nav-item'> <a href='user/history_recharge/php' class='nav-link'>Lịch sử nạp tiền</a> </li>
+                  <li class='nav-item'> <a href='user/history_recharge.php' class='nav-link'>Lịch sử nạp tiền</a> </li>
                   <li class='nav-item'> <a href='payment/recharge.php' class='nav-link'>Nạp tiền</a> </li>
                   <li class='nav-item'> <a href='logout.php' class='nav-link'>Đăng xuất</a> </li>
                   </ul>
