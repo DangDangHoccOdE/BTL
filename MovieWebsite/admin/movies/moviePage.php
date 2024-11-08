@@ -107,8 +107,14 @@ foreach ($selected_categories as $category_id) {
 }
 
 // Xóa phim
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_movie'])) {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_movie']) && $_POST['delete_movie'] == true) {
     $movie_id = $_POST['movie_id'];
+
+    // Kiểm tra nếu movie_id là số hợp lệ
+    if (!is_numeric($movie_id)) {
+        echo json_encode(['message' => 'ID phim không hợp lệ!', 'type' => 'error']);
+        exit;
+    }
 
     // Xóa thể loại phim
     $delete_categories_sql = "DELETE FROM movie_categories WHERE movie_id = ?";
@@ -128,6 +134,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_movie'])) {
     echo json_encode(['message' => 'Phim đã được xóa thành công!', 'type' => 'success']);
     exit;
 }
+
 
 // Lấy danh sách thể loại
 if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['load_categories'])) {
@@ -254,12 +261,41 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['load_all_movies'])) {
             <th>Viewers</th>
             <th>Image Path</th>
             <th>Video Path</th>
-            <th>Price</th>
+            <th>Price</th>     
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody></tbody>
 </table>
 
+</div>
+
+<!-- Modal to Edit Movie -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editModalLabel">Edit Movie</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="editMovieForm">
+                    <input type="hidden" id="edit_movie_id" name="movie_id">
+                    <input type="text" class="form-control mb-2" id="edit_movie_name" name="movie_name" placeholder="Movie Name" required>
+                    <input type="text" class="form-control mb-2" id="edit_rdate" name="rdate" placeholder="Release Date" required>
+                    <input type="text" class="form-control mb-2" id="edit_runtime" name="runtime" placeholder="Runtime" required>
+                    <textarea class="form-control mb-2" id="edit_description" name="description" placeholder="Description" required></textarea>
+                    <input type="number" class="form-control mb-2" id="edit_viewers" name="viewers" placeholder="Viewers" value="1" required>
+                    <input type="text" class="form-control mb-2" id="edit_imgpath" name="imgpath" placeholder="Image Path" required>
+                    <input type="text" class="form-control mb-2" id="edit_videopath" name="videopath" placeholder="Video Path" required>
+                    <input type="number" class="form-control mb-2" id="edit_price" name="price" placeholder="Price" required>
+                    <button type="submit" class="btn btn-primary">Update Movie</button>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
@@ -299,58 +335,115 @@ $(document).ready(function () {
     });
 
     // Hàm load danh sách phim
-    function loadMovies() {
-        $.get('moviePage.php', { load_all_movies: true }, function(response) {
-            try {
-                var data = JSON.parse(response);
-                if (data.movies) {
-                    $('#movieTable tbody').empty();
-                    data.movies.forEach(function(movie) {
-                        $('#movieTable tbody').append(`
-                            <tr>
-                                <td>${movie.mid}</td>
-                                <td>${movie.name}</td>
-                                <td>${movie.genres}</td>
-                                <td>${movie.rdate}</td>
-                                <td>${movie.runtime}</td>
-                                <td>${movie.description}</td>
-                                <td>${movie.viewers}</td>
-                                <td>${movie.imgpath}</td>
-                                <td>${movie.videopath}</td>
-                                <td>${movie.price}</td>
-                            </tr>
-                        `);
-                    });
-                }
-            } catch (e) {
-                console.error('Lỗi khi phân tích cú pháp JSON:', e);
-                alert('Có lỗi xảy ra khi tải phim.');
+function loadMovies() {
+    $.get('moviePage.php', { load_all_movies: true }, function(response) {
+        try {
+            var data = JSON.parse(response);
+            if (data.movies) {
+                $('#movieTable tbody').empty();
+                data.movies.forEach(function(movie) {
+                    $('#movieTable tbody').append(`
+                        <tr>
+                            <td>${movie.mid}</td>
+                            <td>${movie.name}</td>
+                            <td>${movie.genres}</td>
+                            <td>${movie.rdate}</td>
+                            <td>${movie.runtime}</td>
+                            <td>${movie.description}</td>
+                            <td>${movie.viewers}</td>
+                            <td>${movie.imgpath}</td>
+                            <td>${movie.videopath}</td>
+                            <td>${movie.price}</td>
+                            <td>
+                                <button class="btn btn-warning editBtn" data-id="${movie.mid}">Edit</button>
+                                <button class="btn btn-danger deleteBtn" data-id="${movie.mid}">Delete</button>
+                            </td>
+                        </tr>
+                    `);
+                });
             }
-        });
-    }
+        } catch (e) {
+            console.error('Lỗi khi phân tích cú pháp JSON:', e);
+            alert('Có lỗi khi tải danh sách phim.');
+        }
+    });
+}
 
-    // Hàm load danh sách thể loại
-    function loadCategories() {
-        $.get('moviePage.php', { load_categories: true }, function(response) {
-            try {
-                var data = JSON.parse(response);
-                if (data.categories) {
-                    $('#categories').empty();
-                    data.categories.forEach(function(category) {
-                        $('#categories').append(`<option value="${category.id}">${category.name}</option>`);
-                    });
-                }
-            } catch (e) {
-                console.error('Lỗi khi phân tích cú pháp JSON:', e);
-                alert('Có lỗi xảy ra khi tải thể loại.');
-            }
-        });
-    }
-
-    loadCategories();
+    // Gọi loadMovies() khi trang được tải
     loadMovies();
-});
 
+    // Sửa phim (Mở modal)
+    $(document).on('click', '.editBtn', function() {
+        var movie_id = $(this).data('id');
+
+        // Lấy thông tin phim từ server
+        $.get('moviePage.php', { load_movie_by_id: movie_id }, function(response) {
+            try {
+                var data = JSON.parse(response);
+                if (data.movie) {
+                    var movie = data.movie;
+                    $('#edit_movie_id').val(movie.mid);
+                    $('#edit_movie_name').val(movie.name);
+                    $('#edit_rdate').val(movie.rdate);
+                    $('#edit_runtime').val(movie.runtime);
+                    $('#edit_description').val(movie.description);
+                    $('#edit_viewers').val(movie.viewers);
+                    $('#edit_imgpath').val(movie.imgpath);
+                    $('#edit_videopath').val(movie.videopath);
+                    $('#edit_price').val(movie.price);
+                    $('#editModal').modal('show');
+                }
+            } catch (e) {
+                console.error('Lỗi khi phân tích cú pháp JSON:', e);
+                alert('Có lỗi khi tải thông tin phim.');
+            }
+        });
+    });
+
+    // Xử lý form sửa phim
+    $('#editMovieForm').submit(function (e) {
+        e.preventDefault();
+
+        var formData = new FormData(this);
+        formData.append('edit_movie', true);
+
+        $.ajax({
+            url: 'moviePage.php', 
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                alert(response);
+                try {
+                    var data = JSON.parse(response);
+                    if (data.type === 'success') {
+                        loadMovies(); 
+                        $('#editModal').modal('hide');
+                    }
+                } catch (e) {
+                    console.error('Lỗi khi phân tích cú pháp JSON:', e);
+                    alert('Có lỗi xảy ra khi sửa phim.');
+                }
+            }
+        });
+    });
+
+   // Xóa phim
+$(document).on('click', '.deleteBtn', function() {
+    var movie_id = $(this).data('id');
+    if (confirm('Are you sure you want to delete this movie?')) {
+        $.post('moviePage.php', { delete_movie: true, movie_id: movie_id }, function(response) {
+            const data = JSON.parse(response);
+            alert(data.message);
+            if (data.type === 'success') {
+                loadMovies();
+            }
+        });
+    }
+});
+});
 </script>
+
 </body>
 </html>
