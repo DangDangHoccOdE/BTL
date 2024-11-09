@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-include '../dbh.php';
+include '../../dbh.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Lấy số tiền người dùng chọn
@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $vnp_TmnCode = "0AG3YTI9"; // Thay bằng mã TMN thực tế của bạn
         $vnp_HashSecret = "6F6BZJ0XHW106LYGULFC5BYC0ZQWOIOK"; // Thay bằng chuỗi bí mật của bạn
         $vnp_Url = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html"; // URL API thanh toán của VNPAY
-        $vnp_Returnurl = "http://localhost/BTL/MovieWebsite/payment/return_url.php"; // URL để VNPAY gọi lại sau khi thanh toán xong
+        $vnp_Returnurl = "http://localhost/BTL/MovieWebsite/user/payment/return_url.php"; // URL để VNPAY gọi lại sau khi thanh toán xong
 
         // Thông tin giao dịch
         $vnp_TxnRef = uniqid(); // Mã giao dịch duy nhất

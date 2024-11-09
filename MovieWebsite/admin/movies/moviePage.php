@@ -197,6 +197,33 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['load_all_movies'])) {
     echo json_encode(['movies' => $movies]);
     exit;
 }
+
+// Lấy thông tin của một phim cụ thể
+if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['load_movie_by_id'])) {
+    $movie_id = $_GET['load_movie_by_id'];
+
+    $movie_sql = "
+        SELECT m.*, GROUP_CONCAT(c.id) AS categories
+        FROM movies m
+        LEFT JOIN movie_categories mc ON m.mid = mc.movie_id
+        LEFT JOIN categories c ON mc.category_id = c.id
+        WHERE m.mid = ?
+        GROUP BY m.mid
+    ";
+
+    $stmt = mysqli_prepare($conn, $movie_sql);
+    mysqli_stmt_bind_param($stmt, "i", $movie_id);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+
+    if ($row = mysqli_fetch_assoc($result)) {
+        echo json_encode(['movie' => $row]);
+    } else {
+        echo json_encode(['message' => 'Phim không tồn tại!', 'type' => 'error']);
+    }
+    exit;
+}
+
 ?>
 
 
@@ -217,7 +244,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['load_all_movies'])) {
 <form id="addMovieForm">
     <h3>Add New Movie</h3>
     <input type="text" class="form-control mb-2" id="movie_name" name="movie_name" placeholder="Movie Name" required>
-    <input type="text" class="form-control mb-2" id="rdate" name="rdate" placeholder="Release Date" required>
+    <input type="date" class="form-control mb-2" id="rdate" name="rdate" placeholder="Release Date" required>
     <input type="text" class="form-control mb-2" id="runtime" name="runtime" placeholder="Runtime" required>
     <textarea class="form-control mb-2" id="description" name="description" placeholder="Description" required></textarea>
     <input type="number" class="form-control mb-2" id="viewers" name="viewers" placeholder="Viewers" value="1" required>
@@ -284,13 +311,24 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['load_all_movies'])) {
                 <form id="editMovieForm">
                     <input type="hidden" id="edit_movie_id" name="movie_id">
                     <input type="text" class="form-control mb-2" id="edit_movie_name" name="movie_name" placeholder="Movie Name" required>
-                    <input type="text" class="form-control mb-2" id="edit_rdate" name="rdate" placeholder="Release Date" required>
+                    <input type="date" class="form-control mb-2" id="edit_rdate" name="rdate" placeholder="Release Date" required>
                     <input type="text" class="form-control mb-2" id="edit_runtime" name="runtime" placeholder="Runtime" required>
                     <textarea class="form-control mb-2" id="edit_description" name="description" placeholder="Description" required></textarea>
                     <input type="number" class="form-control mb-2" id="edit_viewers" name="viewers" placeholder="Viewers" value="1" required>
                     <input type="text" class="form-control mb-2" id="edit_imgpath" name="imgpath" placeholder="Image Path" required>
                     <input type="text" class="form-control mb-2" id="edit_videopath" name="videopath" placeholder="Video Path" required>
                     <input type="number" class="form-control mb-2" id="edit_price" name="price" placeholder="Price" required>
+
+                    <!-- Form edit movie (with categories) -->
+                    <select multiple class="form-control mb-2" id="edit_categories" name="categories[]">
+                        <?php
+                        $result = mysqli_query($conn, $get_categories_sql);
+                        while ($category = mysqli_fetch_assoc($result)) {
+                            echo "<option value='{$category['id']}'>{$category['name']}</option>";
+                        }
+                        ?>
+                    </select>
+
                     <button type="submit" class="btn btn-primary">Update Movie</button>
                 </form>
             </div>
@@ -299,6 +337,8 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['load_all_movies'])) {
 </div>
 
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+
 <script>
 $(document).ready(function () {
     // Xử lý form thêm phim
@@ -373,32 +413,37 @@ function loadMovies() {
     loadMovies();
 
     // Sửa phim (Mở modal)
-    $(document).on('click', '.editBtn', function() {
-        var movie_id = $(this).data('id');
-
-        // Lấy thông tin phim từ server
-        $.get('moviePage.php', { load_movie_by_id: movie_id }, function(response) {
-            try {
-                var data = JSON.parse(response);
-                if (data.movie) {
-                    var movie = data.movie;
-                    $('#edit_movie_id').val(movie.mid);
-                    $('#edit_movie_name').val(movie.name);
-                    $('#edit_rdate').val(movie.rdate);
-                    $('#edit_runtime').val(movie.runtime);
-                    $('#edit_description').val(movie.description);
-                    $('#edit_viewers').val(movie.viewers);
-                    $('#edit_imgpath').val(movie.imgpath);
-                    $('#edit_videopath').val(movie.videopath);
-                    $('#edit_price').val(movie.price);
-                    $('#editModal').modal('show');
-                }
-            } catch (e) {
-                console.error('Lỗi khi phân tích cú pháp JSON:', e);
-                alert('Có lỗi khi tải thông tin phim.');
+$(document).on('click', '.editBtn', function() {
+    var movie_id = $(this).data('id');
+    // Lấy thông tin phim từ server
+    $.get('moviePage.php', { load_movie_by_id: movie_id }, function(response) {
+        try {
+            var data = JSON.parse(response);
+            if (data.movie) {
+                var movie = data.movie;
+                $('#edit_movie_id').val(movie.mid);
+                $('#edit_movie_name').val(movie.name);
+                $('#edit_rdate').val(movie.rdate);
+                $('#edit_runtime').val(movie.runtime);
+                $('#edit_description').val(movie.description);
+                $('#edit_viewers').val(movie.viewers);
+                $('#edit_imgpath').val(movie.imgpath);
+                $('#edit_videopath').val(movie.videopath);
+                $('#edit_price').val(movie.price);
+                
+                // Populate categories
+                $('#edit_categories').val(movie.categories);
+                
+                // Show the modal
+                $('#editModal').modal('show');
             }
-        });
+        } catch (e) {
+            console.error('Lỗi khi phân tích cú pháp JSON:', e);
+            alert('Có lỗi khi tải thông tin phim.');
+        }
     });
+});
+
 
     // Xử lý form sửa phim
     $('#editMovieForm').submit(function (e) {

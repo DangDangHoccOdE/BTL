@@ -11,6 +11,6 @@ if(isset($_POST['sub'])){
 
     $nsql = "UPDATE users SET name= '$nam', DOB= '$date',phone= '$phn' WHERE id='$rid'";
     $result = mysqli_query($conn,$nsql);
-    header("Location: account.php");
+    header("Location: user/account.php");
    }
 ?>

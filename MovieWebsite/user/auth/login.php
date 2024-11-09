@@ -20,7 +20,7 @@ session_start();
 
             <ul class="navbar-nav">
               <li class="nav-item"> <a href="#A" class="nav-link"> Dịch vụ</a> </li>
-              <li class="nav-item"> <a href="user-login.php" class="nav-link"> Đăng nhập</a> </li>
+              <li class="nav-item"> <a href="user/auth/user-login.php" class="nav-link"> Đăng nhập</a> </li>
 
             </ul>
 
@@ -29,7 +29,7 @@ session_start();
         <div class="container">
           <div class="jumbotron">
             <h1>Xem mọi lúc, <br> Xem mọi nơi... </h1> <br>
-            <a href="test.php" type="button" class="btn btn-danger btn-block">Đăng ký ngay</a>
+            <a href="user/auth/register.php" type="button" class="btn btn-danger btn-block">Đăng ký ngay</a>
           </div>
         </div>
       </div>

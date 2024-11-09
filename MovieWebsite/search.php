@@ -26,7 +26,7 @@ session_start();
                   echo "<li class='nav-item'> <a href='admin.php' class='nav-link'>Add movie</a> </li>";
                 }
               }
-              echo"<li class='nav-item'> <a href='account.php' class='nav-link'>Account</a> </li>
+              echo"<li class='nav-item'> <a href='user/account.php' class='nav-link'>Account</a> </li>
 
                   <li class='nav-item'> <a href='logout.php' class='nav-link'>Logout</a> </li>
                   </ul>

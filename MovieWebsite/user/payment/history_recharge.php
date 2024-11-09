@@ -1,5 +1,5 @@
 <?php
-include '../dbh.php'; // Kết nối với cơ sở dữ liệu
+include '../../dbh.php'; // Kết nối với cơ sở dữ liệu
 
 // Xử lý lọc
 $filter_date = isset($_GET['filter_date']) ? $_GET['filter_date'] : '';

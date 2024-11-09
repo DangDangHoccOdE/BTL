@@ -1,7 +1,7 @@
 <?php 
 
 
-include 'login.php';
+include 'user/auth/login.php';
 
 
 ?>

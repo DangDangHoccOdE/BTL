@@ -1,6 +1,6 @@
 <?php
 session_start();
-include '../dbh.php';
+include '../../dbh.php';
 
 $vnp_HashSecret = "6F6BZJ0XHW106LYGULFC5BYC0ZQWOIOK"; // Chuỗi bí mật đã nhận từ VNPAY
 

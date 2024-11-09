@@ -65,7 +65,7 @@ $total_revenue = $result_revenue->fetch_assoc()['total_revenue'];
             <a href="#" class="nav-link">Manage Users</a>
           </li>
           <li class="nav-item">
-            <a href="#" class="nav-link">Manage Movies</a>
+            <a href="movies/moviePage.php" class="nav-link">Manage Movies</a>
           </li>
           <li class="nav-item">
             <a href="genre/genrePage.php" class="nav-link">Manage Genres</a>
