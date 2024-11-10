@@ -1,5 +1,6 @@
 <?php
 include '../../dbh.php';
+include "../filterRequestAdmin.php";
 
 $success_message = ''; // Để lưu thông báo thành công
 $error_message = '';   // Để lưu thông báo lỗi
@@ -79,34 +80,76 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['delete_genre'])) {
     exit;
 }
 
+// // Lấy danh sách thể loại và phân trang
+// $page = isset($_GET['page']) ? $_GET['page'] : 1;
+// $limit = 6;
+// $offset = ($page - 1) * $limit;
+
+// $total_sql = "SELECT COUNT(*) AS total FROM categories";
+// $total_result = mysqli_query($conn, $total_sql);
+// $total_row = mysqli_fetch_assoc($total_result);
+// $total_pages = ceil($total_row['total'] / $limit);
+
+// $list_sql = "SELECT * FROM categories ORDER BY id LIMIT ? OFFSET ?";
+// $stmt = mysqli_prepare($conn, $list_sql);
+// mysqli_stmt_bind_param($stmt, "ii", $limit, $offset);
+// mysqli_stmt_execute($stmt);
+// $result = mysqli_stmt_get_result($stmt);
+
+// // Trả về dữ liệu dưới dạng JSON nếu là yêu cầu AJAX
+// if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['ajax'])) {
+//     $genres = [];
+//     while ($row = mysqli_fetch_assoc($result)) {
+//         $genres[] = $row;
+//     }
+//     echo json_encode([
+//         'genres' => $genres,
+//         'total_pages' => $total_pages
+//     ]);
+//     exit;
+// }
+
 // Lấy danh sách thể loại và phân trang
 $page = isset($_GET['page']) ? $_GET['page'] : 1;
 $limit = 6;
 $offset = ($page - 1) * $limit;
+$search = isset($_GET['search']) ? $_GET['search'] : '';
 
-$total_sql = "SELECT COUNT(*) AS total FROM categories";
-$total_result = mysqli_query($conn, $total_sql);
-$total_row = mysqli_fetch_assoc($total_result);
-$total_pages = ceil($total_row['total'] / $limit);
+// Kiểm tra xem có từ khóa tìm kiếm không
+$searchTerm = isset($_GET['search']) ? $_GET['search'] : '';
 
-$list_sql = "SELECT * FROM categories ORDER BY id LIMIT ? OFFSET ?";
+// Cập nhật SQL để tìm kiếm thể loại theo từ khóa
+$list_sql = "SELECT * FROM categories WHERE name LIKE ? ORDER BY id LIMIT ? OFFSET ?";
 $stmt = mysqli_prepare($conn, $list_sql);
-mysqli_stmt_bind_param($stmt, "ii", $limit, $offset);
+$searchTermLike = "%" . $searchTerm . "%"; // Thêm ký tự % để tìm kiếm theo chuỗi
+mysqli_stmt_bind_param($stmt, "sii", $searchTermLike, $limit, $offset);
 mysqli_stmt_execute($stmt);
 $result = mysqli_stmt_get_result($stmt);
 
-// Trả về dữ liệu dưới dạng JSON nếu là yêu cầu AJAX
+// Trả về dữ liệu dưới dạng JSON
 if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['ajax'])) {
     $genres = [];
     while ($row = mysqli_fetch_assoc($result)) {
         $genres[] = $row;
     }
+
+    // Tính toán tổng số trang
+    $total_sql = "SELECT COUNT(*) AS total FROM categories WHERE name LIKE ?";
+    $stmt = mysqli_prepare($conn, $total_sql);
+    mysqli_stmt_bind_param($stmt, "s", $searchTermLike);
+    mysqli_stmt_execute($stmt);
+    $total_result = mysqli_stmt_get_result($stmt);
+    $total_row = mysqli_fetch_assoc($total_result);
+    $total_pages = ceil($total_row['total'] / $limit);
+
     echo json_encode([
         'genres' => $genres,
         'total_pages' => $total_pages
     ]);
     exit;
 }
+
+
 ?>
 
 <!DOCTYPE html>
@@ -154,6 +197,19 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['ajax'])) {
                 </form>
             </div>
         </div>
+
+       <!-- Tìm kiếm thể loại -->
+        <div class="row mb-3">
+            <div class="col">
+                <h3>Search Genre</h3>
+                <div class="d-flex">
+                    <input type="text" class="form-control" id="searchGenre" placeholder="Tìm theo tên thể loại">
+                    <button class="btn btn-primary ml-2" id="searchBtn">Tìm kiếm</button>
+                </div>
+            </div>
+        </div>
+
+
 
         <!-- Hiển thị danh sách thể loại -->
         <table class="table table-striped" id="genreTable">
@@ -291,49 +347,57 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['ajax'])) {
             }
         }
 
-        // Tải danh sách thể loại qua AJAX
-        function loadGenres(page = 1) {
-            $.ajax({
-                url: 'genrePage.php',
-                method: 'GET',
-                data: { ajax: true, page: page },
-                success: function(response) {
-                    const data = JSON.parse(response);
-                    const genres = data.genres;
-                    const totalPages = data.total_pages;
-                    
-                    // Hiển thị danh sách thể loại
-                    const tbody = $('#genreTable tbody');
-                    tbody.empty();
-                    genres.forEach(genre => {
-                        tbody.append(`
-                            <tr>
-                                <td>${genre.id}</td>
-                                <td>${genre.name}</td>
-                                <td>
-                                    <button class="btn btn-warning btn-sm" onclick="editGenre(${genre.id}, '${genre.name}')">Edit</button>
-                                    <button class="btn btn-danger btn-sm" onclick="deleteGenre(${genre.id})">Delete</button>
-                                </td>
-                            </tr>
-                        `);
-                    });
+       // Xử lý khi nhấn nút Tìm kiếm
+$('#searchBtn').on('click', function() {
+    const searchTerm = $('#searchGenre').val();
+    loadGenres(1, searchTerm); // Tải lại thể loại theo từ khóa tìm kiếm
+});
 
-                    // Hiển thị phân trang
-                    const pagination = $('#pagination');
-                    pagination.empty();
-                    for (let i = 1; i <= totalPages; i++) {
-                        pagination.append(`
-                            <li class="page-item ${i === page ? 'active' : ''}">
-                                <a class="page-link" href="javascript:void(0)" onclick="loadGenres(${i})">${i}</a>
-                            </li>
-                        `);
-                    }
-                },
-                error: function() {
-                    showToast('Đã xảy ra lỗi khi tải danh sách thể loại!', 'error');
-                }
+// Hàm tải danh sách thể loại qua AJAX, có thể truyền tham số tìm kiếm
+function loadGenres(page = 1, searchTerm = '') {
+    $.ajax({
+        url: 'genrePage.php',
+        method: 'GET',
+        data: { ajax: true, page: page, search: searchTerm }, // Gửi từ khóa tìm kiếm
+        success: function(response) {
+            const data = JSON.parse(response);
+            const genres = data.genres;
+            const totalPages = data.total_pages;
+            
+            // Hiển thị danh sách thể loại
+            const tbody = $('#genreTable tbody');
+            tbody.empty();
+            genres.forEach(genre => {
+                tbody.append(`
+                    <tr>
+                        <td>${genre.id}</td>
+                        <td>${genre.name}</td>
+                        <td>
+                            <button class="btn btn-warning btn-sm" onclick="editGenre(${genre.id}, '${genre.name}')">Edit</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteGenre(${genre.id})">Delete</button>
+                        </td>
+                    </tr>
+                `);
             });
+
+            // Hiển thị phân trang
+            const pagination = $('#pagination');
+            pagination.empty();
+            for (let i = 1; i <= totalPages; i++) {
+                pagination.append(`
+                    <li class="page-item ${i === page ? 'active' : ''}">
+                        <a class="page-link" href="javascript:void(0)" onclick="loadGenres(${i}, '${searchTerm}')">${i}</a>
+                    </li>
+                `);
+            }
+        },
+        error: function() {
+            showToast('Đã xảy ra lỗi khi tải danh sách thể loại!', 'error');
         }
+    });
+}
+
+
 
         // Tải danh sách thể loại khi tải trang
         $(document).ready(function() {

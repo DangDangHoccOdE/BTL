@@ -1,6 +1,6 @@
 <?php
-session_start();
 include "../dbh.php";
+include "filterRequestAdmin.php";
 
 // Kết nối cơ sở dữ liệu
 
@@ -71,7 +71,7 @@ $total_revenue = $result_revenue->fetch_assoc()['total_revenue'];
             <a href="genre/genrePage.php" class="nav-link">Manage Genres</a>
           </li>
           <li class="nav-item">
-            <a href="logout.php" class="nav-link">Logout</a>
+            <a href="auth/admin_logout.php" class="nav-link">Logout</a>
           </li>
         </ul>
       </div>

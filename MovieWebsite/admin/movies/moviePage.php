@@ -1,12 +1,18 @@
 <?php
 include '../../dbh.php';
+include "../filterRequestAdmin.php";
+
 
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
+$success_message = ''; // Để lưu thông báo thành công
+$error_message = '';   // Để lưu thông báo lỗi
+
 // Thêm phim
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_movie'])) {
     $movie_name = $_POST['movie_name'];
+
     $rdate = $_POST['rdate'];
     $runtime = $_POST['runtime'];
     $description = $_POST['description'];
@@ -16,36 +22,51 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_movie'])) {
     $price = $_POST['price'];
     $selected_categories = $_POST['categories'];  // Mảng chứa ID thể loại đã chọn
     
-    if (empty($movie_name) || empty($rdate) || empty($runtime) || empty($description)) {
-        echo json_encode(['message' => 'Dữ liệu không hợp lệ!', 'type' => 'error']);
-        exit;
-    }
-
-    // Chèn phim vào bảng movies
-    $insert_sql = "INSERT INTO movies (name, rdate, runtime, description, viewers, imgpath, videopath, price) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-    $stmt = mysqli_prepare($conn, $insert_sql);
-    mysqli_stmt_bind_param($stmt, "ssssissi", $movie_name, $rdate, $runtime, $description, $viewers, $imgpath, $videopath, $price);
-    if (!mysqli_stmt_execute($stmt)) {
-        echo json_encode(['message' => 'Lỗi khi thêm phim!', 'type' => 'error']);
-        exit;
-    }
-
-    // Lấy ID phim vừa thêm
-    $movie_id = mysqli_insert_id($conn);
-
-    // Chèn thể loại vào bảng movie_categories
-    foreach ($selected_categories as $category_id) {
-        $insert_category_sql = "INSERT INTO movie_categories (movie_id, category_id) VALUES (?, ?)";
-        $stmt = mysqli_prepare($conn, $insert_category_sql);
-        mysqli_stmt_bind_param($stmt, "ii", $movie_id, $category_id);
+     // Kiểm tra tên phim trong CSDL, xác minh không trùng lặp
+     $check_sql = "SELECT mid FROM movies WHERE name = ?";
+     $stmt = mysqli_prepare($conn, $check_sql);
+     mysqli_stmt_bind_param($stmt, "s", $movie_name);
+     mysqli_stmt_execute($stmt);
+     $result = mysqli_stmt_get_result($stmt);
+ 
+     if (mysqli_num_rows($result) > 0) {
+         $error_message = 'Tên phim đã tồn tại!';
+         echo json_encode(['message' => $error_message, 'type' => 'error']);
+         exit;
+     } else if (empty($movie_name) || empty($rdate) || empty($runtime) || empty($description)) {
+         $error_message = 'Dữ liệu không hợp lệ!';
+         echo json_encode(['message' => $error_message, 'type' => 'error']);
+         exit;
+     }else{
+        // Chèn phim vào bảng movies
+        $insert_sql = "INSERT INTO movies (name, rdate, runtime, description, viewers, imgpath, videopath, price) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        $stmt = mysqli_prepare($conn, $insert_sql);
+        mysqli_stmt_bind_param($stmt, "ssssissi", $movie_name, $rdate, $runtime, $description, $viewers, $imgpath, $videopath, $price);
         if (!mysqli_stmt_execute($stmt)) {
-            echo json_encode(['message' => 'Lỗi khi thêm thể loại cho phim!', 'type' => 'error']);
+            $error_message = 'Lỗi khi thêm phim!';
+            echo json_encode(['message' => $error_message, 'type' => 'error']);
             exit;
         }
-    }
 
-    echo json_encode(['message' => 'Phim đã được thêm thành công!', 'type' => 'success']);
-    exit;
+        // Lấy ID phim vừa thêm
+        $movie_id = mysqli_insert_id($conn);
+
+        // Chèn thể loại vào bảng movie_categories
+        foreach ($selected_categories as $category_id) {
+            $insert_category_sql = "INSERT INTO movie_categories (movie_id, category_id) VALUES (?, ?)";
+            $stmt = mysqli_prepare($conn, $insert_category_sql);
+            mysqli_stmt_bind_param($stmt, "ii", $movie_id, $category_id);
+            if (!mysqli_stmt_execute($stmt)) {
+                $error_message = 'Lỗi khi thêm thể loại cho phim!';
+                echo json_encode(['message' => $error_message, 'type' => 'error']);
+                exit;
+            }
+        }
+
+        $success_message = 'Phim đã được thêm thành công!';
+        echo json_encode(['message' => $success_message, 'type' => 'success']);
+        exit;
+     }
 }
 
 // Sửa phim
@@ -61,17 +82,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_movie'])) {
     $price = $_POST['price'];
     $selected_categories = $_POST['categories'];
 
-    if (empty($movie_name) || empty($rdate) || empty($runtime) || empty($description)) {
-        echo json_encode(['message' => 'Dữ liệu không hợp lệ!', 'type' => 'error']);
-        exit;
-    }
+     // Kiểm tra tên phim trong CSDL, tránh trùng tên với phim khác
+     $check_sql = "SELECT mid FROM movies WHERE name = ? AND mid != ?";
+     $stmt = mysqli_prepare($conn, $check_sql);
+     mysqli_stmt_bind_param($stmt, "si", $movie_name, $movie_id);
+     mysqli_stmt_execute($stmt);
+     $result = mysqli_stmt_get_result($stmt);
+ 
+     if (mysqli_num_rows($result) > 0) {
+         $error_message = 'Tên phim đã tồn tại!';
+         echo json_encode(['message' => $error_message, 'type' => 'error']);
+         exit();
+     } else if (empty($movie_name) || empty($rdate) || empty($runtime) || empty($description)) {
+         $error_message = 'Dữ liệu không hợp lệ!';
+         echo json_encode(['message' => $error_message, 'type' => 'error']);
+         exit;
+     }
 
     // Cập nhật thông tin phim
     $update_sql = "UPDATE movies SET name = ?, rdate = ?, runtime = ?, description = ?, viewers = ?, imgpath = ?, videopath = ?, price = ? WHERE mid = ?";
     $stmt = mysqli_prepare($conn, $update_sql);
     mysqli_stmt_bind_param($stmt, "ssssissii", $movie_name, $rdate, $runtime, $description, $viewers, $imgpath, $videopath, $price, $movie_id);
     if (!mysqli_stmt_execute($stmt)) {
-        echo json_encode(['message' => 'Lỗi khi sửa phim!', 'type' => 'error']);
+        $error_message = 'Lỗi khi sửa phim!';
+        echo json_encode(['message' => $error_message, 'type' => 'error']);
         exit;
     }
 
@@ -80,7 +114,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_movie'])) {
     $stmt = mysqli_prepare($conn, $delete_categories_sql);
     mysqli_stmt_bind_param($stmt, "i", $movie_id);
     if (!mysqli_stmt_execute($stmt)) {
-        echo json_encode(['message' => 'Lỗi khi cập nhật thể loại!', 'type' => 'error']);
+        $error_message = 'Lỗi khi cập nhật thể loại!';
+        echo json_encode(['message' => $error_message, 'type' => 'error']);
         exit;
     }
 
@@ -89,20 +124,22 @@ foreach ($selected_categories as $category_id) {
     $insert_category_sql = "INSERT INTO movie_categories (movie_id, category_id) VALUES (?, ?)";
     $stmt = mysqli_prepare($conn, $insert_category_sql);
     if (!$stmt) {
-        echo json_encode(['message' => 'Lỗi khi chuẩn bị câu truy vấn: ' . mysqli_error($conn), 'type' => 'error']);
+        $error_message = 'Lỗi khi chuẩn bị câu truy vấn: ' . mysqli_error($conn);
+        echo json_encode(['message' => $error_message, 'type' => 'error']);
         exit;
     }
 
     mysqli_stmt_bind_param($stmt, "ii", $movie_id, $category_id);
 
     if (!mysqli_stmt_execute($stmt)) {
-        echo json_encode(['message' => 'Lỗi khi thực thi câu truy vấn thêm thể loại: ' . mysqli_stmt_error($stmt), 'type' => 'error']);
+        $error_message = 'Lỗi khi thực thi câu truy vấn thêm thể loại: ' . mysqli_stmt_error($stmt);
+        echo json_encode(['message' => $error_message, 'type' => 'error']);
         exit;
     }
 }
 
-
-    echo json_encode(['message' => 'Phim đã được cập nhật thành công!', 'type' => 'success']);
+    $success_message = 'Phim đã được cập nhật thành công!';
+    echo json_encode(['message' => $success_message, 'type' => 'success']);
     exit;
 }
 
@@ -112,7 +149,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_movie']) && $_P
 
     // Kiểm tra nếu movie_id là số hợp lệ
     if (!is_numeric($movie_id)) {
-        echo json_encode(['message' => 'ID phim không hợp lệ!', 'type' => 'error']);
+        $error_message = 'ID phim không hợp lệ!';
+        echo json_encode(['message' => $error_message, 'type' => 'error']);
         exit;
     }
 
@@ -127,11 +165,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_movie']) && $_P
     $stmt = mysqli_prepare($conn, $delete_sql);
     mysqli_stmt_bind_param($stmt, "i", $movie_id);
     if (!mysqli_stmt_execute($stmt)) {
-        echo json_encode(['message' => 'Lỗi khi xóa phim!', 'type' => 'error']);
+        $error_message = 'Lỗi khi xóa phim!';
+        echo json_encode(['message' => $error_message, 'type' => 'error']);
         exit;
     }
 
-    echo json_encode(['message' => 'Phim đã được xóa thành công!', 'type' => 'success']);
+    $success_message = 'Phim đã được xóa thành công!';
+    echo json_encode(['message' => $success_message, 'type' => 'success']);
     exit;
 }
 
@@ -141,7 +181,8 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['load_categories'])) {
     $category_sql = "SELECT * FROM categories";
     $result = mysqli_query($conn, $category_sql);
     if (!$result) {
-        echo json_encode(['message' => 'Lỗi khi truy vấn dữ liệu thể loại!', 'type' => 'error']);
+        $error_message = 'Lỗi khi truy vấn dữ liệu thể loại!';
+        echo json_encode(['message' => $error_message, 'type' => 'error']);
         exit;
     }
     $categories = [];
@@ -152,15 +193,34 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['load_categories'])) {
     exit;
 }
 
-// Tìm kiếm và sắp xếp phim
-if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['search'])) {
-    $search_term = $_GET['search'];
-    $sort_by = isset($_GET['sort_by']) && $_GET['sort_by'] == 'viewers' ? 'viewers DESC' : 'name ASC';
+if ($_SERVER["REQUEST_METHOD"] == "GET" && (isset($_GET['search']) || isset($_GET['sort_by']))) {
+    // Xử lý tìm kiếm hoặc sắp xếp
+    $search_term = isset($_GET['search']) ? $_GET['search'] : '';
+    $sort_by = isset($_GET['sort_by']) ? $_GET['sort_by'] : '';
+    
+    // Câu lệnh SQL cơ bản
+    $search_sql = "SELECT * FROM movies";
+    
+    // Điều kiện tìm kiếm
+    if ($search_term) {
+        $search_sql .= " WHERE name LIKE ?";
+        $search_param = "%" . $search_term . "%";
+    }
 
-    $search_sql = "SELECT * FROM movies WHERE name LIKE ? ORDER BY $sort_by";
+    // Điều kiện sắp xếp
+    if ($sort_by == 'viewers_asc') {
+        $search_sql .= " ORDER BY viewers ASC";
+    } elseif ($sort_by == 'viewers_desc') {
+        $search_sql .= " ORDER BY viewers DESC";
+    }
+    
     $stmt = mysqli_prepare($conn, $search_sql);
-    $search_param = "%$search_term%";
-    mysqli_stmt_bind_param($stmt, "s", $search_param);
+
+    // Ràng buộc tham số tìm kiếm nếu có
+    if ($search_term) {
+        mysqli_stmt_bind_param($stmt, "s", $search_param);
+    }
+    
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
 
@@ -172,8 +232,14 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['search'])) {
     exit;
 }
 
-// Lấy tất cả các phim và thể loại của chúng
+
+// Lấy tất cả các phim và thể loại của chúng với phân trang
 if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['load_all_movies'])) {
+    // Nhận tham số `page` và `limit`, hoặc đặt giá trị mặc định
+    $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+    $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 5;
+    $offset = ($page - 1) * $limit;
+    
     $get_movies_sql = "
         SELECT m.mid, m.name, m.rdate, m.runtime, m.description, m.viewers, m.imgpath, m.videopath, m.price,
                GROUP_CONCAT(c.name SEPARATOR ', ') AS genres
@@ -181,20 +247,33 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['load_all_movies'])) {
         LEFT JOIN movie_categories mc ON m.mid = mc.movie_id
         LEFT JOIN categories c ON mc.category_id = c.id
         GROUP BY m.mid
+        LIMIT $limit OFFSET $offset
     ";
     
     $result = mysqli_query($conn, $get_movies_sql);
     if (!$result) {
-        echo json_encode(['message' => 'Lỗi khi truy vấn dữ liệu phim!', 'type' => 'error']);
+        $error_message = 'Lỗi khi truy vấn dữ liệu phim!';
+        echo json_encode(['message' => $error_message, 'type' => 'error']);
         exit;
     }
-    $movies = [];
     
+    $movies = [];
     while ($row = mysqli_fetch_assoc($result)) {
         $movies[] = $row;
     }
     
-    echo json_encode(['movies' => $movies]);
+    // Trả về số lượng phim
+    $count_sql = "SELECT COUNT(*) AS total FROM movies";
+    $count_result = mysqli_query($conn, $count_sql);
+    $total = mysqli_fetch_assoc($count_result)['total'];
+    
+    echo json_encode([
+        'movies' => $movies,
+        'total' => $total,
+        'page' => $page,
+        'limit' => $limit,
+        'totalPages' => ceil($total / $limit)
+    ]);
     exit;
 }
 
@@ -219,7 +298,8 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['load_movie_by_id'])) {
     if ($row = mysqli_fetch_assoc($result)) {
         echo json_encode(['movie' => $row]);
     } else {
-        echo json_encode(['message' => 'Phim không tồn tại!', 'type' => 'error']);
+        $error_message = 'Phim không tồn tại!';
+        echo json_encode(['message' => $error_message, 'type' => 'error']);
     }
     exit;
 }
@@ -232,14 +312,32 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['load_movie_by_id'])) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Movie Management</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            display: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+            display: block;
+        }
+    </style>
 </head>
 <body>
 <div class="container my-5">
     <h1>Movie Management</h1>
 
-    <!-- Form thêm phim -->
+       <!-- Toast container -->
+       <div id="toast-container"></div>
     <!-- Form thêm phim -->
 <form id="addMovieForm">
     <h3>Add New Movie</h3>
@@ -267,13 +365,13 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['load_movie_by_id'])) {
     <button type="submit" class="btn btn-primary">Add Movie</button>
 </form>
 
-
-    <!-- Tìm kiếm và sắp xếp phim -->
-    <input type="text" id="search" placeholder="Search by name" class="form-control mb-2">
-    <select id="sort_by" class="form-control mb-2">
-        <option value="name">Sort by Name</option>
-        <option value="viewers">Sort by Viewers</option>
-    </select>
+<input type="text" id="search" placeholder="Tìm kiếm theo tên phim" class="form-control mb-2">
+<select id="sort_by" class="form-control mb-2">
+    <option value="">Không sắp xếp</option>
+    <option value="viewers_asc">Sắp xếp theo lượt xem tăng dần</option>
+    <option value="viewers_desc">Sắp xếp theo lượt xem giảm dần</option>
+</select>
+<button id="searchBtn" class="btn btn-primary">Tìm kiếm / Sắp xếp</button>
 
     <!-- Bảng danh sách phim -->
     <table class="table" id="movieTable">
@@ -293,8 +391,14 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['load_movie_by_id'])) {
         </tr>
     </thead>
     <tbody></tbody>
-</table>
 
+</table>
+<!-- Phân trang -->
+<nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center" id="pagination">
+                <!-- Dữ liệu phân trang sẽ được tải qua AJAX -->
+            </ul>
+        </nav>
 </div>
 
 <!-- Modal to Edit Movie -->
@@ -340,7 +444,43 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['load_movie_by_id'])) {
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 
 <script>
-$(document).ready(function () {
+
+        
+// $(document).ready(function () {
+  // Hàm hiển thị toast
+function showToast(message, type) {
+    var toastColor = type === 'error' ? 'bg-danger' : 'bg-success';
+
+    // Xóa toast cũ (nếu có) để tránh hiển thị chồng chéo
+    document.querySelectorAll('.toast').forEach(toast => toast.remove());
+
+    // Tạo toast HTML mới
+    var toastHTML = `
+         <div class="toast align-items-center text-white ${toastColor} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    ${message}
+                </div>
+            </div>
+        </div>`;
+
+    // Thêm toast vào body
+    document.body.insertAdjacentHTML('beforeend', toastHTML);
+
+    // Hiển thị toast
+    var toastElement = document.querySelector('.toast');
+    var toast = new bootstrap.Toast(toastElement);
+    toast.show();
+
+    // Xóa toast sau khi hiển thị 5 giây
+    setTimeout(function() {
+        if (toastElement) {
+            toastElement.remove();
+        }
+    }, 5000);
+}
+
+
     // Xử lý form thêm phim
     $('#addMovieForm').submit(function (e) {
         e.preventDefault();
@@ -355,28 +495,26 @@ $(document).ready(function () {
             processData: false,
             contentType: false,
             success: function(response) {
-                alert(response);
 
                 try {
                     var data = JSON.parse(response);  // Kiểm tra và xử lý dữ liệu JSON
-                    alert(data.message);
+                    showToast(data.message, data.type);
                     if (data.type === 'success') {
                         loadMovies();  // Hàm này sẽ load lại danh sách phim nếu cần
                     }
                 } catch (e) {
                     console.error('Lỗi khi phân tích cú pháp JSON:', e);
-                    alert('Có lỗi xảy ra khi thêm phim.');
+                    showToast(data.message, data.type);
                 }
             },
             error: function(xhr, status, error) {
-                alert('Lỗi trong quá trình thêm phim. Vui lòng thử lại.');
+                showToast('Lỗi trong quá trình thêm phim. Vui lòng thử lại.','error');
             }
         });
     });
 
-    // Hàm load danh sách phim
-function loadMovies() {
-    $.get('moviePage.php', { load_all_movies: true }, function(response) {
+    function loadMovies(page = 1) {
+    $.get('moviePage.php', { load_all_movies: true, page: page, limit: 5 }, function(response) {
         try {
             var data = JSON.parse(response);
             if (data.movies) {
@@ -401,16 +539,28 @@ function loadMovies() {
                         </tr>
                     `);
                 });
+
+                // Hiển thị các nút phân trang
+                $('#pagination').empty();
+                for (let i = 1; i <= data.totalPages; i++) {
+                    $('#pagination').append(`
+                          <li class="page-item ${i === page ? 'active' : ''}">
+                                <a class="page-link" href="javascript:void(0)" onclick="loadMovies(${i})">${i}</a>
+                         </li>
+                    `);
+                }
             }
         } catch (e) {
             console.error('Lỗi khi phân tích cú pháp JSON:', e);
-            alert('Có lỗi khi tải danh sách phim.');
+            showToast('Có lỗi khi tải danh sách phim.','error');
         }
     });
 }
 
     // Gọi loadMovies() khi trang được tải
-    loadMovies();
+    $(document).ready(function() {
+            loadMovies();
+        });
 
     // Sửa phim (Mở modal)
 $(document).on('click', '.editBtn', function() {
@@ -439,7 +589,7 @@ $(document).on('click', '.editBtn', function() {
             }
         } catch (e) {
             console.error('Lỗi khi phân tích cú pháp JSON:', e);
-            alert('Có lỗi khi tải thông tin phim.');
+            showToast('Có lỗi khi tải thông tin phim.','error');
         }
     });
 });
@@ -459,16 +609,16 @@ $(document).on('click', '.editBtn', function() {
             processData: false,
             contentType: false,
             success: function(response) {
-                alert(response);
                 try {
                     var data = JSON.parse(response);
+                    showToast(data.message,data.type);
                     if (data.type === 'success') {
                         loadMovies(); 
                         $('#editModal').modal('hide');
                     }
                 } catch (e) {
                     console.error('Lỗi khi phân tích cú pháp JSON:', e);
-                    alert('Có lỗi xảy ra khi sửa phim.');
+                    showToast(data.message, data.type);
                 }
             }
         });
@@ -480,14 +630,72 @@ $(document).on('click', '.deleteBtn', function() {
     if (confirm('Are you sure you want to delete this movie?')) {
         $.post('moviePage.php', { delete_movie: true, movie_id: movie_id }, function(response) {
             const data = JSON.parse(response);
-            alert(data.message);
+            showToast(data.message, data.type);
             if (data.type === 'success') {
                 loadMovies();
             }
         });
     }
 });
+
+$(document).ready(function () {
+    // Hàm tìm kiếm hoặc sắp xếp phim
+    function searchOrSortMovies() {
+        var searchTerm = $('#search').val().trim();
+        var sortBy = $('#sort_by').val();
+        
+        // Chỉ định các tham số tùy vào việc người dùng tìm kiếm hoặc sắp xếp
+        var params = {};
+        
+        if (searchTerm) {
+            params.search = searchTerm;  // Nếu có từ khóa tìm kiếm, sẽ tìm kiếm theo tên
+        }
+        
+        if (sortBy) {
+            params.sort_by = sortBy;  // Nếu chọn sắp xếp, sẽ sắp xếp theo lượt xem
+        }
+
+        // Gửi yêu cầu GET với các tham số tìm kiếm hoặc sắp xếp
+        $.get('moviePage.php', params, function (response) {
+            try {
+                var data = JSON.parse(response);
+                if (data.movies) {
+                    // Xóa danh sách phim hiện tại
+                    $('#movieTable tbody').empty();
+
+                    // Hiển thị danh sách phim sau khi tìm kiếm hoặc sắp xếp
+                    data.movies.forEach(function (movie) {
+                        $('#movieTable tbody').append(`
+                            <tr>
+                                <td>${movie.mid}</td>
+                                <td>${movie.name}</td>
+                                <td>${movie.rdate}</td>
+                                <td>${movie.runtime}</td>
+                                <td>${movie.description}</td>
+                                <td>${movie.viewers}</td>
+                                <td>${movie.imgpath}</td>
+                                <td>${movie.videopath}</td>
+                                <td>${movie.price}</td>
+                                <td>
+                                    <button class="btn btn-warning editBtn" data-id="${movie.mid}">Edit</button>
+                                    <button class="btn btn-danger deleteBtn" data-id="${movie.mid}">Delete</button>
+                                </td>
+                            </tr>
+                        `);
+                    });
+                }
+            } catch (e) {
+                console.error('Lỗi khi phân tích cú pháp JSON:', e);
+                showToast('Có lỗi khi tìm kiếm hoặc sắp xếp phim.', 'error');
+            }
+        });
+    }
+
+    // Gọi hàm tìm kiếm hoặc sắp xếp khi nhấn nút Tìm kiếm / Sắp xếp
+    $('#searchBtn').on('click', searchOrSortMovies);
 });
+
+// });
 </script>
 
 </body>
