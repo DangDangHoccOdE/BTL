@@ -103,9 +103,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_movie'])) {
     $runtime = $_POST['runtime'];
     $description = $_POST['description'];
     $viewers = $_POST['viewers'];
-    $videopath = $_POST['videopath'];
-    $price = $_POST['price'];
-    $selected_categories = $_POST['categories'];
+
+    $target_dir = "../../uploads/";  // Đường dẫn lưu hình ảnh
+
+    $imgpath = basename($_FILES['imgpath']['name'] ?? ''); // Tên file ảnh
+    $target = $target_dir . $imgpath;  // Đường dẫn đầy đủ để lưu ảnh
+    $videopath = $_POST['videopath'] ?? '';
+    $price = $_POST['price'] ?? '';
+    $selected_categories = $_POST['categories'] ?? [];  // Mảng chứa các ID thể loại được chọn
 
      // Kiểm tra các trường bắt buộc
      if (empty(trim($movie_name))) {
@@ -720,7 +725,7 @@ $(document).on('click', '.editBtn', function() {
             data: formData,
             processData: false,
             contentType: false,
-            success: function(response) {
+            success: function(response) {console.log(response);
                 try {
                     var data = JSON.parse(response);
                     showToast(data.message,data.type);

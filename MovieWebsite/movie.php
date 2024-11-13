@@ -4,15 +4,22 @@ session_start();
 
 // Lấy thông tin phim theo ID
 $movieId = isset($_GET['id']) ? intval($_GET['id']) : 0;
-$sql = "SELECT * FROM movies WHERE mid = $movieId";
-$result = $conn->query($sql);
+$query = "SELECT * FROM movies WHERE mid = $movieId";
+$result = mysqli_query($conn, $query);
 
-if ($result->num_rows > 0) {
-    $movie = $result->fetch_assoc();
-} else {
-    echo "Phim không tồn tại.";
-    exit;
+if (!$result) {
+    // Kiểm tra lỗi truy vấn
+    echo "Lỗi truy vấn: " . mysqli_error($conn);
+    exit();
 }
+
+$movie = mysqli_fetch_assoc($result);
+
+if (!$movie) {
+    echo "Phim không tồn tại!";
+    exit();
+}
+
 
 // Lấy thông tin người dùng nếu đã đăng nhập
 $userId = isset($_SESSION['id']) ? $_SESSION['id'] : null;
@@ -36,6 +43,40 @@ $sqlTotalReviews = "SELECT COUNT(*) AS total FROM reviews WHERE movie_id = $movi
 $totalReviewsResult = $conn->query($sqlTotalReviews);
 $totalReviews = $totalReviewsResult->fetch_assoc()['total'];
 $totalPages = ceil($totalReviews / $reviewsPerPage);
+
+// Lấy thể loại của phim hiện tại
+$category_query = "
+    SELECT categories.name 
+    FROM movie_categories 
+    JOIN categories ON movie_categories.category_id = categories.id 
+    WHERE movie_categories.movie_id = $movieId
+";
+$category_result = mysqli_query($conn, $category_query);
+
+if (!$category_result) {
+    echo "Lỗi truy vấn thể loại: " . mysqli_error($conn);
+    exit();
+}
+
+$category = mysqli_fetch_assoc($category_result);
+
+// Lấy danh sách 4 phim cùng thể loại
+$related_movies_query = "
+    SELECT m.mid, m.name, m.imgpath, m.price
+    FROM movies m
+    JOIN movie_categories mc ON m.mid = mc.movie_id
+    WHERE mc.category_id = (SELECT category_id FROM movie_categories WHERE movie_id = $movieId LIMIT 1)
+    AND m.mid != $movieId
+    LIMIT 8
+";
+$related_movies_result = mysqli_query($conn, $related_movies_query);
+if (mysqli_num_rows($related_movies_result) == 0) {
+    echo "Không có phim cùng thể loại!";
+}
+if (!$related_movies_result) {
+    echo "Lỗi truy vấn phim cùng thể loại: " . mysqli_error($conn);
+    exit();
+}
 ?>
 
 <!DOCTYPE html>
@@ -44,6 +85,16 @@ $totalPages = ceil($totalReviews / $reviewsPerPage);
     <meta charset="UTF-8">
     <title><?php echo htmlspecialchars($movie['name']); ?> - Xem Phim</title>
     <style>
+        .related-movies .col-md-3 {
+            margin-top: 15px;
+        }
+        .related-movies img {
+            border-radius: 5px;
+            transition: transform 0.3s;
+        }
+        .related-movies img:hover {
+            transform: scale(1.05);
+        }
         body { background-color: #333; color: #ccc; font-family: Arial, sans-serif; }
         .container { width: 80%; margin: 20px auto; }
         .movie-title { font-size: 24px; color: #fff; }
@@ -114,12 +165,29 @@ $totalPages = ceil($totalReviews / $reviewsPerPage);
             </div>
         <?php } ?>
 
-
+        <!-- Phân trang -->
+        <div class="pagination">
+            <?php for ($i = 1; $i <= $totalPages; $i++) { ?>
+                <a href="?id=<?php echo $movieId; ?>&page=<?php echo $i; ?>"><?php echo $i; ?></a>
+            <?php } ?>
         </div>
-           <!-- Phân trang -->
-           <div class="pagination" id="pagination-container">
-        <!-- Phân trang sẽ được tải qua AJAX -->
-    </div>  
+    </div>
+
+     <!-- Khu vực hiển thị các phim cùng thể loại -->
+    <div class="related-movies mt-5">
+        <h4>Phim cùng thể loại</h4>
+        <div class="row">
+            <?php while ($related_movie = mysqli_fetch_assoc($related_movies_result)): ?>
+                <div class="col-md-3 text-center">
+                    <a href="movie.php?movie_id=<?php echo $related_movie['mid']; ?>">
+                        <img src="uploads/<?php echo $related_movie['imgpath']; ?>" class="img-fluid" alt="<?php echo htmlspecialchars($related_movie['name']); ?>">
+                    </a>
+                    <h5 class="mt-2"><?php echo ucwords($related_movie['name']); ?></h5>
+                    <p><?php echo $related_movie['price'] == 0 ? "Miễn phí" : number_format($related_movie['price'], 2) . " VND"; ?></p>
+                </div>
+            <?php endwhile; ?>
+        </div>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
@@ -129,48 +197,10 @@ $totalPages = ceil($totalReviews / $reviewsPerPage);
             text: message,
             duration: 3000,
             gravity: "top",
-            position: "right",
+            position: "center",
             backgroundColor: color,
         }).showToast();
     }
-     // Hàm tải đánh giá qua AJAX
-     function loadReviews(page = 1) {
-        fetch(`get_reviews.php?movie_id=<?php echo $movieId; ?>&page=${page}`)
-            .then(response => response.json())
-            .then(data => {
-                // Hiển thị đánh giá
-                const reviewsContainer = document.getElementById("reviews-container");
-                reviewsContainer.innerHTML = data.reviews.map(review => `
-                    <div class="review-item" id="review-${review.id}">
-                        <div class="review-header">
-                            ${review.name} - ${review.rating}⭐
-                        </div>
-                        <div class="review-body">
-                            ${review.review_content}
-                        </div>
-                        <div class="review-footer">
-                            Đánh giá vào: ${review.created_at}
-                            <?php if ($userId == $review['user_id'] || $userRole == 'admin') { ?>
-                                <a href="javascript:void(0);" onclick="deleteReview(${review.id})">Xóa</a>
-                            <?php } ?>
-                        </div>
-                    </div>
-                `).join("");
-
-                // Hiển thị phân trang
-                const paginationContainer = document.getElementById("pagination-container");
-                paginationContainer.innerHTML = '';
-                for (let i = 1; i <= data.totalPages; i++) {
-                    paginationContainer.innerHTML += `<button onclick="loadReviews(${i})">${i}</button>`;
-                }
-            })
-            .catch(error => {
-                showToast("Lỗi khi tải đánh giá.", "linear-gradient(to right, #ff5f6d, #ffc371)");
-            });
-    }
-
-    // Tải đánh giá lần đầu khi trang được mở
-    loadReviews();
 
     function submitReview() {
         const rating = document.getElementById("rating").value;

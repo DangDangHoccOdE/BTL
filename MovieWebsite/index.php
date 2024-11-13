@@ -74,7 +74,7 @@ $user_logged_in = isset($_SESSION['user_id']);
                                 <div class="card-body">
                                     <h5 class="card-title"><?php echo htmlspecialchars($movie['name']); ?></h5>
                                     <p class="card-text">Giá: <?php echo number_format($movie['price'], 0, ',', '.'); ?> VND</p>
-                                    <a href="movie_preview.php?id=<?php echo $movie['mid']; ?>" class="btn btn-primary">Xem chi tiết</a>
+                                    <a href="movie_preview.php?movie_id=<?php echo $movie['mid']; ?>" class="btn btn-primary">Xem chi tiết</a>
                                 </div>
                             </div>
                         </div>
