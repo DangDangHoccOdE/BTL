@@ -119,7 +119,7 @@ CREATE TABLE `movies` (
 
 LOCK TABLES `movies` WRITE;
 /*!40000 ALTER TABLE `movies` DISABLE KEYS */;
-INSERT INTO `movies` VALUES (1,'Anh Giang IT may mắn','2024-11-07','60','Bộ phim được Việt hóa từ bộ phim tình cảm đình đám Hàn Quốc - Jang Bo Ri is here do đài MBC sản xuất và phát sóng năm 2014. Thời điểm phát sóng, bộ phim đã nhận được nhiều sự quan tâm theo dõi của khán giả với mức rating \"khủng\". Bộ phim đã gây bão khắp quốc gia châu Á, trong đó có Việt Nam và nhận được hàng loạt giải thưởng danh giá. Phim Hạnh phúc bị đánh cắp quy tụ dàn diễn viên hai miền Bắc - Nam, với sự kết hợp giữa những cái tên đình đám bên cạnh nhiều gương mặt trẻ triển vọng. Để phù hợp với văn hóa và đời sống của người Việt, nếu bản gốc xoay quanh nghề làm hanbok thì bản Việt hóa khai thác nghề thêu trên nền áo dài - tranh vẽ của gia tộc họ Đỗ. Bên cạnh đó là những thử thách, sự tranh đấu của thế hệ trẻ để trở thành truyền nhân thêu của gia tộc họ Đỗ.\r\nDiễn viên: Thuận Nguyễn, Bích Ngọc, Steven Nguyễn, Quỳnh Lương, Hạnh Thúy, Trung Dũng, Cát Tường, Đại Nghĩa\r\n ',1,'coder.jpg','https://player.phimapi.com/player/?url=https://s3.phim1280.tv/20240821/NiMp1KQp/index.m3u8',50000,0),(2,'Anh Giang IT may mắn 6','2024-11-07','60','Bộ phim được Việt hóa từ bộ phim tình cảm đình đám Hàn Quốc - Jang Bo Ri is here do đài MBC sản xuất và phát sóng năm 2014. Thời điểm phát sóng, bộ phim đã nhận được nhiều sự quan tâm theo dõi của khán giả với mức rating \"khủng\". Bộ phim đã gây bão khắp quốc gia châu Á, trong đó có Việt Nam và nhận được hàng loạt giải thưởng danh giá. Phim Hạnh phúc bị đánh cắp quy tụ dàn diễn viên hai miền Bắc - Nam, với sự kết hợp giữa những cái tên đình đám bên cạnh nhiều gương mặt trẻ triển vọng. Để phù hợp với văn hóa và đời sống của người Việt, nếu bản gốc xoay quanh nghề làm hanbok thì bản Việt hóa khai thác nghề thêu trên nền áo dài - tranh vẽ của gia tộc họ Đỗ. Bên cạnh đó là những thử thách, sự tranh đấu của thế hệ trẻ để trở thành truyền nhân thêu của gia tộc họ Đỗ.\r\nDiễn viên: Thuận Nguyễn, Bích Ngọc, Steven Nguyễn, Quỳnh Lương, Hạnh Thúy, Trung Dũng, Cát Tường, Đại Nghĩa\r\n ',1,'coder.jpg','https://player.phimapi.com/player/?url=https://s3.phim1280.tv/20240821/NiMp1KQp/index.m3u8',50000,0);
+INSERT INTO `movies` VALUES (1,'Anh Giang IT may mắn','2024-11-07','60','Bộ phim được Việt hóa từ bộ phim tình cảm đình đám Hàn Quốc - Jang Bo Ri is here do đài MBC sản xuất và phát sóng năm 2014. Thời điểm phát sóng, bộ phim đã nhận được nhiều sự quan tâm theo dõi của khán giả với mức rating \"khủng\". Bộ phim đã gây bão khắp quốc gia châu Á, trong đó có Việt Nam và nhận được hàng loạt giải thưởng danh giá. Phim Hạnh phúc bị đánh cắp quy tụ dàn diễn viên hai miền Bắc - Nam, với sự kết hợp giữa những cái tên đình đám bên cạnh nhiều gương mặt trẻ triển vọng. Để phù hợp với văn hóa và đời sống của người Việt, nếu bản gốc xoay quanh nghề làm hanbok thì bản Việt hóa khai thác nghề thêu trên nền áo dài - tranh vẽ của gia tộc họ Đỗ. Bên cạnh đó là những thử thách, sự tranh đấu của thế hệ trẻ để trở thành truyền nhân thêu của gia tộc họ Đỗ.\r\nDiễn viên: Thuận Nguyễn, Bích Ngọc, Steven Nguyễn, Quỳnh Lương, Hạnh Thúy, Trung Dũng, Cát Tường, Đại Nghĩa\r\n ',1,'coder.jpg','https://player.phimapi.com/player/?url=https://s3.phim1280.tv/20240821/NiMp1KQp/index.m3u8',50000,0),(2,'Anh Giang IT may mắn 6','2024-11-07','60','Bộ phim được Việt hóa từ bộ phim tình cảm đình đám Hàn Quốc - Jang Bo Ri is here do đài MBC sản xuất và phát sóng năm 2014. Thời điểm phát sóng, bộ phim đã nhận được nhiều sự quan tâm theo dõi của khán giả với mức rating \"khủng\". Bộ phim đã gây bão khắp quốc gia châu Á, trong đó có Việt Nam và nhận được hàng loạt giải thưởng danh giá. Phim Hạnh phúc bị đánh cắp quy tụ dàn diễn viên hai miền Bắc - Nam, với sự kết hợp giữa những cái tên đình đám bên cạnh nhiều gương mặt trẻ triển vọng. Để phù hợp với văn hóa và đời sống của người Việt, nếu bản gốc xoay quanh nghề làm hanbok thì bản Việt hóa khai thác nghề thêu trên nền áo dài - tranh vẽ của gia tộc họ Đỗ. Bên cạnh đó là những thử thách, sự tranh đấu của thế hệ trẻ để trở thành truyền nhân thêu của gia tộc họ Đỗ.\r\nDiễn viên: Thuận Nguyễn, Bích Ngọc, Steven Nguyễn, Quỳnh Lương, Hạnh Thúy, Trung Dũng, Cát Tường, Đại Nghĩa\r\n ',1,'coder.jpg','https://player.phimapi.com/player/?url=https://s3.phim1280.tv/20240821/NiMp1KQp/index.m3u8',50000,7);
 /*!40000 ALTER TABLE `movies` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -218,15 +218,17 @@ DROP TABLE IF EXISTS `reviews`;
 CREATE TABLE `reviews` (
   `id` int NOT NULL AUTO_INCREMENT,
   `movie_id` int NOT NULL,
+  `user_id` int NOT NULL,
   `rating` int NOT NULL,
   `review_content` text NOT NULL,
-  `image_path` varchar(255) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `movie_id` (`movie_id`),
+  KEY `user_id` (`user_id`),
   CONSTRAINT `reviews_ibfk_1` FOREIGN KEY (`movie_id`) REFERENCES `movies` (`mid`) ON DELETE CASCADE,
+  CONSTRAINT `reviews_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
   CONSTRAINT `reviews_chk_1` CHECK ((`rating` between 1 and 5))
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -235,7 +237,7 @@ CREATE TABLE `reviews` (
 
 LOCK TABLES `reviews` WRITE;
 /*!40000 ALTER TABLE `reviews` DISABLE KEYS */;
-INSERT INTO `reviews` VALUES (1,1,4,'','uploads/reviews/00a814b6-7ea7-4650-9129-97cedfd3181d_anh2.jpg','2024-11-13 14:19:28');
+INSERT INTO `reviews` VALUES (1,2,1,3,'ok','2024-11-13 15:23:25'),(2,2,1,5,'ok','2024-11-13 15:24:06'),(3,2,1,4,'ok','2024-11-13 15:24:37'),(4,2,1,5,'ij','2024-11-13 15:26:23'),(5,2,1,5,'ii','2024-11-13 15:26:26'),(6,2,1,3,'ll','2024-11-13 15:26:33');
 /*!40000 ALTER TABLE `reviews` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -282,4 +284,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-11-13 21:32:30
+-- Dump completed on 2024-11-13 22:33:55

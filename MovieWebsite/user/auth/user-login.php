@@ -7,12 +7,12 @@
   $username = '';
 
   // Kiểm tra nếu form đã được gửi
-  if (isset($_POST['mail']) && isset($_POST['pass'])) {
-      $username = $_POST['mail'];
+  if (isset($_POST['id']) && isset($_POST['pass'])) {
+      $username = $_POST['id'];
       $password = $_POST['pass'];
 
       // Cẩn thận với SQL Injection: sử dụng prepared statements
-      $sql = "SELECT * FROM users WHERE username = ?";
+      $sql = "SELECT * FROM users WHERE id = ?";
       $stmt = $conn->prepare($sql);
       $stmt->bind_param("s", $username); // "s" biểu thị chuỗi
       $stmt->execute();
@@ -23,6 +23,7 @@
           if (password_verify($password, $row['passwd'])) {
               // Mật khẩu đúng, lưu id vào session và chuyển hướng
               $_SESSION['id'] = $row['id'];
+              $_SESSION['role'] = $row['role'];
               header("Location: ../../homepage.php");
               exit(); // Dừng thực thi sau khi chuyển hướng
           } else {

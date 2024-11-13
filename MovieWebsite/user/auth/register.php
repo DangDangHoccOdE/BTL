@@ -104,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <a href="login.php" class="navbar-brand"><img src="images/logo.png" alt="Logo"></a>
         <span class="navbar-text">LetPhich</span>
         <ul class="navbar-nav">
-          <li class="nav-item"><a href="user/auth/user-login.php" class="nav-link">Đăng nhập</a></li>
+          <li class="nav-item"><a href="user-login.php" class="nav-link">Đăng nhập</a></li>
         </ul>
       </nav>
 
