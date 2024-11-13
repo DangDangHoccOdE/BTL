@@ -20,7 +20,7 @@ session_start();
 
             <ul class="navbar-nav">
               <li class="nav-item"> <a href="#A" class="nav-link"> Dịch vụ</a> </li>
-              <li class="nav-item"> <a href="user/auth/user-login.php" class="nav-link"> Đăng nhập</a> </li>
+              <li class="nav-item"> <a href="user-login.php" class="nav-link"> Đăng nhập</a> </li>
 
             </ul>
 

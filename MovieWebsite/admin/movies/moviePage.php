@@ -9,36 +9,58 @@ error_reporting(E_ALL);
 $success_message = ''; // Để lưu thông báo thành công
 $error_message = '';   // Để lưu thông báo lỗi
 
-// Thêm phim
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_movie'])) {
-    $movie_name = $_POST['movie_name'];
+    $movie_name = $_POST['movie_name'] ?? '';
+    $rdate = $_POST['rdate'] ?? '';
+    $runtime = $_POST['runtime'] ?? '';
+    $description = $_POST['description'] ?? '';
+    $viewers = $_POST['viewers'] ?? '';
+    $target_dir = "../../uploads/";  // Đường dẫn lưu hình ảnh
 
-    $rdate = $_POST['rdate'];
-    $runtime = $_POST['runtime'];
-    $description = $_POST['description'];
-    $viewers = $_POST['viewers'];
-    $imgpath = $_POST['imgpath'];
-    $videopath = $_POST['videopath'];
-    $price = $_POST['price'];
-    $selected_categories = $_POST['categories'];  // Mảng chứa ID thể loại đã chọn
+    $imgpath = basename($_FILES['imgpath']['name'] ?? ''); // Tên file ảnh
+    $target = $target_dir . $imgpath;  // Đường dẫn đầy đủ để lưu ảnh
+    $videopath = $_POST['videopath'] ?? '';
+    $price = $_POST['price'] ?? '';
+    $selected_categories = $_POST['categories'] ?? [];  // Mảng chứa các ID thể loại được chọn
+
+    // Kiểm tra các trường bắt buộc
+    if (empty(trim($movie_name))) {
+        echo json_encode(['message' => 'Tên phim là bắt buộc!', 'type' => 'error']);
+        exit;
+    }
+    if (empty(trim($rdate))) {
+        echo json_encode(['message' => 'Ngày phát hành là bắt buộc!', 'type' => 'error']);
+        exit;
+    }
+    if (empty(trim($runtime))) {
+        echo json_encode(['message' => 'Thời lượng phim là bắt buộc!', 'type' => 'error']);
+        exit;
+    }
+    if (empty(trim($description))) {
+        echo json_encode(['message' => 'Mô tả là bắt buộc!', 'type' => 'error']);
+        exit;
+    }
+    if (empty(trim($imgpath))) {
+        echo json_encode(['message' => 'Hình ảnh là bắt buộc!', 'type' => 'error']);
+        exit;
+    }
     
-     // Kiểm tra tên phim trong CSDL, xác minh không trùng lặp
-     $check_sql = "SELECT mid FROM movies WHERE name = ?";
-     $stmt = mysqli_prepare($conn, $check_sql);
-     mysqli_stmt_bind_param($stmt, "s", $movie_name);
-     mysqli_stmt_execute($stmt);
-     $result = mysqli_stmt_get_result($stmt);
- 
-     if (mysqli_num_rows($result) > 0) {
-         $error_message = 'Tên phim đã tồn tại!';
-         echo json_encode(['message' => $error_message, 'type' => 'error']);
-         exit;
-     } else if (empty($movie_name) || empty($rdate) || empty($runtime) || empty($description)) {
-         $error_message = 'Dữ liệu không hợp lệ!';
-         echo json_encode(['message' => $error_message, 'type' => 'error']);
-         exit;
-     }else{
-        // Chèn phim vào bảng movies
+    // Kiểm tra trùng lặp tên phim
+    $check_sql = "SELECT mid FROM movies WHERE name = ?";
+    $stmt = mysqli_prepare($conn, $check_sql);
+    mysqli_stmt_bind_param($stmt, "s", $movie_name);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+
+    if (mysqli_num_rows($result) > 0) {
+        $error_message = 'Tên phim đã tồn tại!';
+        echo json_encode(['message' => $error_message, 'type' => 'error']);
+        exit;
+    }
+
+    // Thực hiện tải file lên và lưu phim
+    if (move_uploaded_file($_FILES['imgpath']['tmp_name'], $target)) {
+        // Thêm phim vào bảng movies
         $insert_sql = "INSERT INTO movies (name, rdate, runtime, description, viewers, imgpath, videopath, price) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = mysqli_prepare($conn, $insert_sql);
         mysqli_stmt_bind_param($stmt, "ssssissi", $movie_name, $rdate, $runtime, $description, $viewers, $imgpath, $videopath, $price);
@@ -51,7 +73,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_movie'])) {
         // Lấy ID phim vừa thêm
         $movie_id = mysqli_insert_id($conn);
 
-        // Chèn thể loại vào bảng movie_categories
+        // Thêm các thể loại vào bảng movie_categories
         foreach ($selected_categories as $category_id) {
             $insert_category_sql = "INSERT INTO movie_categories (movie_id, category_id) VALUES (?, ?)";
             $stmt = mysqli_prepare($conn, $insert_category_sql);
@@ -65,9 +87,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_movie'])) {
 
         $success_message = 'Phim đã được thêm thành công!';
         echo json_encode(['message' => $success_message, 'type' => 'success']);
-        exit;
-     }
+    } else {
+        $error_message = 'Lỗi khi tải lên hình ảnh!';
+        echo json_encode(['message' => $error_message, 'type' => 'error']);
+    }
+    exit;
 }
+
 
 // Sửa phim
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_movie'])) {
@@ -77,39 +103,103 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_movie'])) {
     $runtime = $_POST['runtime'];
     $description = $_POST['description'];
     $viewers = $_POST['viewers'];
-    $imgpath = $_POST['imgpath'];
     $videopath = $_POST['videopath'];
     $price = $_POST['price'];
     $selected_categories = $_POST['categories'];
 
-     // Kiểm tra tên phim trong CSDL, tránh trùng tên với phim khác
-     $check_sql = "SELECT mid FROM movies WHERE name = ? AND mid != ?";
-     $stmt = mysqli_prepare($conn, $check_sql);
-     mysqli_stmt_bind_param($stmt, "si", $movie_name, $movie_id);
-     mysqli_stmt_execute($stmt);
-     $result = mysqli_stmt_get_result($stmt);
- 
-     if (mysqli_num_rows($result) > 0) {
-         $error_message = 'Tên phim đã tồn tại!';
-         echo json_encode(['message' => $error_message, 'type' => 'error']);
-         exit();
-     } else if (empty($movie_name) || empty($rdate) || empty($runtime) || empty($description)) {
-         $error_message = 'Dữ liệu không hợp lệ!';
-         echo json_encode(['message' => $error_message, 'type' => 'error']);
-         exit;
-     }
+     // Kiểm tra các trường bắt buộc
+     if (empty(trim($movie_name))) {
+        echo json_encode(['message' => 'Tên phim là bắt buộc!', 'type' => 'error']);
+        exit;
+    }
+    if (empty(trim($rdate))) {
+        echo json_encode(['message' => 'Ngày phát hành là bắt buộc!', 'type' => 'error']);
+        exit;
+    }
+    if (empty(trim($runtime))) {
+        echo json_encode(['message' => 'Thời lượng phim là bắt buộc!', 'type' => 'error']);
+        exit;
+    }
+    if (empty(trim($description))) {
+        echo json_encode(['message' => 'Mô tả là bắt buộc!', 'type' => 'error']);
+        exit;
+    }
+    if (empty(trim($imgpath))) {
+        echo json_encode(['message' => 'Hình ảnh là bắt buộc!', 'type' => 'error']);
+        exit;
+    }
 
-    // Cập nhật thông tin phim
+    // Check if movie name already exists, except for the current movie
+    $check_sql = "SELECT mid FROM movies WHERE name = ? AND mid != ?";
+    $stmt = mysqli_prepare($conn, $check_sql);
+    mysqli_stmt_bind_param($stmt, "si", $movie_name, $movie_id);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+
+    if (mysqli_num_rows($result) > 0) {
+        $error_message = 'Tên phim đã tồn tại!';
+        echo json_encode(['message' => $error_message, 'type' => 'error']);
+        exit();
+    } else if (empty($movie_name) || empty($rdate) || empty($runtime) || empty($description)) {
+        $error_message = 'Dữ liệu không hợp lệ!';
+        echo json_encode(['message' => $error_message, 'type' => 'error']);
+        exit;
+    }
+
+    // Handle the image upload
+    $imgpath = ''; // Initialize imgpath
+    if (isset($_FILES['imgpath']) && $_FILES['imgpath']['error'] == 0) {
+        // Fetch the current image path to delete it
+        $query = "SELECT imgpath FROM movies WHERE mid = ?";
+        $stmt = mysqli_prepare($conn, $query);
+        mysqli_stmt_bind_param($stmt, "i", $movie_id);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $row = mysqli_fetch_assoc($result);
+        $old_imgpath = $row['imgpath'];
+
+        // Remove the old image if it exists
+        if (!empty($old_imgpath) && file_exists("../../uploads/" . $old_imgpath)) {
+            unlink("../../uploads/" . $old_imgpath);
+        }
+
+        // Move the new image to the uploads folder
+        $target_dir = "../../uploads/";
+        if (!is_dir($target_dir)) {
+            mkdir($target_dir, 0777, true); // Create the directory if it doesn't exist
+        }
+
+        $imgpath = basename($_FILES['imgpath']['name']);
+        $target = $target_dir . $imgpath;
+
+        if (!move_uploaded_file($_FILES['imgpath']['tmp_name'], $target)) {
+            $error_message = 'Lỗi khi tải lên hình ảnh!';
+            echo json_encode(['message' => $error_message, 'type' => 'error']);
+            exit;
+        }
+    } else {
+        // No new image uploaded, keep the existing image path
+        $query = "SELECT imgpath FROM movies WHERE mid = ?";
+        $stmt = mysqli_prepare($conn, $query);
+        mysqli_stmt_bind_param($stmt, "i", $movie_id);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $row = mysqli_fetch_assoc($result);
+        $imgpath = $row['imgpath']; // Retain the current image path
+    }
+
+    // Update the movie information
     $update_sql = "UPDATE movies SET name = ?, rdate = ?, runtime = ?, description = ?, viewers = ?, imgpath = ?, videopath = ?, price = ? WHERE mid = ?";
     $stmt = mysqli_prepare($conn, $update_sql);
     mysqli_stmt_bind_param($stmt, "ssssissii", $movie_name, $rdate, $runtime, $description, $viewers, $imgpath, $videopath, $price, $movie_id);
+
     if (!mysqli_stmt_execute($stmt)) {
         $error_message = 'Lỗi khi sửa phim!';
         echo json_encode(['message' => $error_message, 'type' => 'error']);
         exit;
     }
 
-    // Xóa thể loại cũ và chèn lại thể loại mới
+    // Update categories
     $delete_categories_sql = "DELETE FROM movie_categories WHERE movie_id = ?";
     $stmt = mysqli_prepare($conn, $delete_categories_sql);
     mysqli_stmt_bind_param($stmt, "i", $movie_id);
@@ -119,29 +209,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_movie'])) {
         exit;
     }
 
-   // Thêm thể loại mới
-foreach ($selected_categories as $category_id) {
-    $insert_category_sql = "INSERT INTO movie_categories (movie_id, category_id) VALUES (?, ?)";
-    $stmt = mysqli_prepare($conn, $insert_category_sql);
-    if (!$stmt) {
-        $error_message = 'Lỗi khi chuẩn bị câu truy vấn: ' . mysqli_error($conn);
-        echo json_encode(['message' => $error_message, 'type' => 'error']);
-        exit;
-    }
+    foreach ($selected_categories as $category_id) {
+        $insert_category_sql = "INSERT INTO movie_categories (movie_id, category_id) VALUES (?, ?)";
+        $stmt = mysqli_prepare($conn, $insert_category_sql);
+        if (!$stmt) {
+            $error_message = 'Lỗi khi chuẩn bị câu truy vấn: ' . mysqli_error($conn);
+            echo json_encode(['message' => $error_message, 'type' => 'error']);
+            exit;
+        }
 
-    mysqli_stmt_bind_param($stmt, "ii", $movie_id, $category_id);
+        mysqli_stmt_bind_param($stmt, "ii", $movie_id, $category_id);
 
-    if (!mysqli_stmt_execute($stmt)) {
-        $error_message = 'Lỗi khi thực thi câu truy vấn thêm thể loại: ' . mysqli_stmt_error($stmt);
-        echo json_encode(['message' => $error_message, 'type' => 'error']);
-        exit;
+        if (!mysqli_stmt_execute($stmt)) {
+            $error_message = 'Lỗi khi thực thi câu truy vấn thêm thể loại: ' . mysqli_stmt_error($stmt);
+            echo json_encode(['message' => $error_message, 'type' => 'error']);
+            exit;
+        }
     }
-}
 
     $success_message = 'Phim đã được cập nhật thành công!';
     echo json_encode(['message' => $success_message, 'type' => 'success']);
     exit;
 }
+
+
 
 // Xóa phim
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_movie']) && $_POST['delete_movie'] == true) {
@@ -153,6 +244,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_movie']) && $_P
         echo json_encode(['message' => $error_message, 'type' => 'error']);
         exit;
     }
+
+       // Lấy đường dẫn ảnh của phim từ cơ sở dữ liệu
+       $get_image_sql = "SELECT imgpath FROM movies WHERE mid = ?";
+       $stmt = mysqli_prepare($conn, $get_image_sql);
+       mysqli_stmt_bind_param($stmt, "i", $movie_id);
+       mysqli_stmt_execute($stmt);
+       $result = mysqli_stmt_get_result($stmt);
+   
+       if ($row = mysqli_fetch_assoc($result)) {
+           $imgpath = $row['imgpath'];
+           $target_dir = "../../uploads/";
+           $image_path = $target_dir . $imgpath;
+   
+           // Kiểm tra và xóa ảnh nếu tồn tại
+           if (file_exists($image_path)) {
+               unlink($image_path);
+           }
+       } else {
+           $error_message = 'Phim không tồn tại!';
+           echo json_encode(['message' => $error_message, 'type' => 'error']);
+           exit;
+       }
 
     // Xóa thể loại phim
     $delete_categories_sql = "DELETE FROM movie_categories WHERE movie_id = ?";
@@ -339,16 +452,16 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['load_movie_by_id'])) {
        <!-- Toast container -->
        <div id="toast-container"></div>
     <!-- Form thêm phim -->
-<form id="addMovieForm">
+<form id="addMovieForm"  enctype="multipart/form-data">
     <h3>Add New Movie</h3>
-    <input type="text" class="form-control mb-2" id="movie_name" name="movie_name" placeholder="Movie Name" required>
-    <input type="date" class="form-control mb-2" id="rdate" name="rdate" placeholder="Release Date" required>
-    <input type="text" class="form-control mb-2" id="runtime" name="runtime" placeholder="Runtime" required>
-    <textarea class="form-control mb-2" id="description" name="description" placeholder="Description" required></textarea>
-    <input type="number" class="form-control mb-2" id="viewers" name="viewers" placeholder="Viewers" value="1" required>
-    <input type="text" class="form-control mb-2" id="imgpath" name="imgpath" placeholder="Image Path" required>
-    <input type="text" class="form-control mb-2" id="videopath" name="videopath" placeholder="Video Path" required>
-    <input type="number" class="form-control mb-2" id="price" name="price" placeholder="Price" required>
+    <input type="text" class="form-control mb-2" id="movie_name" name="movie_name" placeholder="Movie Name" >
+    <input type="date" class="form-control mb-2" id="rdate" name="rdate" placeholder="Release Date" >
+    <input type="text" class="form-control mb-2" id="runtime" name="runtime" placeholder="Runtime" >
+    <textarea class="form-control mb-2" id="description" name="description" placeholder="Description" ></textarea>
+    <input type="number" class="form-control mb-2" id="viewers" name="viewers" placeholder="Viewers" value="1" >
+    <input type="file" class="form-control mb-2" id="imgpath" name="imgpath" placeholder="Image Path" >
+    <input type="text" class="form-control mb-2" id="videopath" name="videopath" placeholder="Video Path" >
+    <input type="number" class="form-control mb-2" id="price" name="price" placeholder="Price" >
 
     <!-- Thể loại phim -->
     <select multiple class="form-control mb-2" id="categories" name="categories[]">
@@ -412,16 +525,16 @@ if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['load_movie_by_id'])) {
                 </button>
             </div>
             <div class="modal-body">
-                <form id="editMovieForm">
+                <form id="editMovieForm"  enctype="multipart/form-data">
                     <input type="hidden" id="edit_movie_id" name="movie_id">
-                    <input type="text" class="form-control mb-2" id="edit_movie_name" name="movie_name" placeholder="Movie Name" required>
-                    <input type="date" class="form-control mb-2" id="edit_rdate" name="rdate" placeholder="Release Date" required>
-                    <input type="text" class="form-control mb-2" id="edit_runtime" name="runtime" placeholder="Runtime" required>
-                    <textarea class="form-control mb-2" id="edit_description" name="description" placeholder="Description" required></textarea>
-                    <input type="number" class="form-control mb-2" id="edit_viewers" name="viewers" placeholder="Viewers" value="1" required>
-                    <input type="text" class="form-control mb-2" id="edit_imgpath" name="imgpath" placeholder="Image Path" required>
-                    <input type="text" class="form-control mb-2" id="edit_videopath" name="videopath" placeholder="Video Path" required>
-                    <input type="number" class="form-control mb-2" id="edit_price" name="price" placeholder="Price" required>
+                    <input type="text" class="form-control mb-2" id="edit_movie_name" name="movie_name" placeholder="Movie Name" >
+                    <input type="date" class="form-control mb-2" id="edit_rdate" name="rdate" placeholder="Release Date" >
+                    <input type="text" class="form-control mb-2" id="edit_runtime" name="runtime" placeholder="Runtime" >
+                    <textarea class="form-control mb-2" id="edit_description" name="description" placeholder="Description" ></textarea>
+                    <input type="number" class="form-control mb-2" id="edit_viewers" name="viewers" placeholder="Viewers" value="1" >
+                    <input type="file" class="form-control mb-2" id="imgpath" name="imgpath" placeholder="Image Path" >
+                    <input type="text" class="form-control mb-2" id="edit_videopath" name="videopath" placeholder="Video Path" >
+                    <input type="number" class="form-control mb-2" id="edit_price" name="price" placeholder="Price" >
 
                     <!-- Form edit movie (with categories) -->
                     <select multiple class="form-control mb-2" id="edit_categories" name="categories[]">
@@ -495,7 +608,6 @@ function showToast(message, type) {
             processData: false,
             contentType: false,
             success: function(response) {
-
                 try {
                     var data = JSON.parse(response);  // Kiểm tra và xử lý dữ liệu JSON
                     showToast(data.message, data.type);

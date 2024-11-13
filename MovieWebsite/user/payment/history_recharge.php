@@ -1,9 +1,13 @@
 <?php
 include '../../dbh.php'; // Kết nối với cơ sở dữ liệu
+session_start();
 
 // Xử lý lọc
 $filter_date = isset($_GET['filter_date']) ? $_GET['filter_date'] : '';
 $filter_amount = isset($_GET['filter_amount']) ? $_GET['filter_amount'] : '';
+
+// Lấy user_id từ session
+$userId = $_SESSION['id'];
 
 // Lấy danh sách lịch sử nạp tiền và phân trang
 $page = isset($_GET['page']) ? $_GET['page'] : 1;
@@ -11,8 +15,8 @@ $limit = 10;
 $offset = ($page - 1) * $limit;
 
 // Xây dựng câu truy vấn SQL với điều kiện lọc
-$sql = "SELECT * FROM recharge_history WHERE 1";
-$params = [];
+$sql = "SELECT * FROM recharge_history WHERE user_id = ?";
+$params = [$userId];  // Đưa userId vào mảng tham số
 
 if ($filter_date) {
     $sql .= " AND DATE(recharge_time) = ?";
@@ -31,18 +35,16 @@ $params[] = $offset;
 // Chuẩn bị câu truy vấn
 $stmt = mysqli_prepare($conn, $sql);
 
-// Gán tham số cho câu truy vấn nếu có
-if (count($params) > 0) {
-    mysqli_stmt_bind_param($stmt, str_repeat("s", count($params)), ...$params);
-}
+// Gán tham số cho câu truy vấn
+mysqli_stmt_bind_param($stmt, str_repeat("s", count($params)), ...$params);
 
 // Thực thi câu truy vấn
 mysqli_stmt_execute($stmt);
 $result = mysqli_stmt_get_result($stmt);
 
-// Lấy tổng số bản ghi
-$total_sql = "SELECT COUNT(*) AS total FROM recharge_history WHERE 1";
-$total_params = [];
+// Tính tổng số bản ghi
+$total_sql = "SELECT COUNT(*) AS total FROM recharge_history WHERE user_id = ?";
+$total_params = [$userId];  // Đưa userId vào mảng tham số của truy vấn tổng
 
 if ($filter_date) {
     $total_sql .= " AND DATE(recharge_time) = ?";
@@ -56,15 +58,14 @@ if ($filter_amount) {
 
 $total_stmt = mysqli_prepare($conn, $total_sql);
 
-// Gán tham số cho câu truy vấn nếu có
-if (count($total_params) > 0) {
-    mysqli_stmt_bind_param($total_stmt, str_repeat("s", count($total_params)), ...$total_params);
-}
+// Gán tham số cho câu truy vấn tổng
+mysqli_stmt_bind_param($total_stmt, str_repeat("s", count($total_params)), ...$total_params);
 
 mysqli_stmt_execute($total_stmt);
 $total_result = mysqli_stmt_get_result($total_stmt);
 $total_row = mysqli_fetch_assoc($total_result);
 $total_pages = ceil($total_row['total'] / $limit);
+
 
 ?>
 <!DOCTYPE html>

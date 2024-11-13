@@ -1,5 +1,5 @@
 <?php
-include 'dbh.php';
+include '../../dbh.php';
 
 
   $im = "SELECT * FROM movies ORDER BY name ASC" ;

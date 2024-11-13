@@ -1,52 +1,104 @@
-body{
-  font-family: sans-serif;
-  height: 100%;
+/* Phim */
+.movie {
+    display: inline-block;
+    width: 200px;
+    margin: 20px;
+    background-color: white;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease-in-out;
+}
 
+.movie:hover {
+    transform: translateY(-10px);
 }
-.navbar-text{
-  font-size: 30px;
-  font-weight: bold;
+
+.movie img {
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+    border-radius: 10px;
 }
-.navbar li{
-  padding: 0 40px;
+
+.movie h3 {
+    margin-top: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
 }
-.nav-item a{
-  text-decoration: none;
+
+/* Nút yêu thích */
+.btn-favorite i {
+    font-size: 30px;
+    color: gray;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.btn-favorite i.liked {
+    color: red;
+}
+
+.btn-favorite {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.btn-favorite:hover {
+    transform: scale(1.1);
+}
+
+/* Các kiểu dáng khác */
+.container {
+    width: 80%;
+    margin: 0 auto;
+}
+
+.container-fluid {
+    background-image: url('images/back.jpg');
+    height: 50vh;
+    background-position: center;
+    background-size: cover;
+    background-attachment: fixed;
+    text-align: center;
+    border: 2px solid grey;
+}
+
+.container-fluid h1 {
+    color: white;
+    margin-top: 100px;
+    font-size: 40px;
+}
+
+.page-footer {
+    background-color: #222;
+    color: white;
+    padding: 20px 0;
+    text-align: center;
+}
+
+.page-footer a {
+    color: white;
+    text-decoration: none;
+}
+
+/* CSS cho nút Tim */
+.btn-outline-danger {
+  background-color: white;
+  border: 2px solid red;
+  color: red;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.btn-outline-danger:hover {
+  background-color: red;
   color: white;
-  font-size: 25px;
-
-}
-.navbar span{
-  font-size: 25px;
-}
-.nav-item a:hover{
-  color: orange;
-  border-bottom: 2px solid orange;
 }
 
-.navbar-brand img{
-  height: 80px;
-
-}
-.container-fluid{
-  background-image: url(images/back.jpg);
-  height: 50vh;
-  background-position: center;
-  background-size: cover;
-  background-attachment: fixed;
-  text-align: center;
-  border: 2px solid grey;
-}
-.container-fluid h1{
-  color: white;
-}
-
-
-
-.page-footer{
-  background-color: black;
-  color: white;
-}
-.col a{
-  text-align: center;
+.fas.fa-heart {
+  font-size: 20px;  /* Kích thước của biểu tượng Tim */
 }

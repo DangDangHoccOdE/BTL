@@ -1,78 +1,123 @@
 <?php
+include 'dbh.php';
 session_start();
-if (isset($_POST['submit'])) {
 
-  $title = $_POST['submit'];
+// Lấy thông tin phim theo ID
+$movieId = isset($_GET['id']) ? intval($_GET['id']) : 0;
+$sql = "SELECT * FROM movies WHERE mid = $movieId";
+$result = $conn->query($sql);
 
-  include 'dbh.php';
-  $im = "SELECT * FROM movies WHERE name = '$title'" ;
-
-  $records = mysqli_query($conn, $im);
-
-  echo "<!DOCTYPE html>";
-  echo "<html lang='en' dir='ltr'>";
-  echo "<head>";
-  echo "<meta charset='utf-8'>";
-  echo "<title>" . $title . "</title>";
-  echo "<link rel='stylesheet' href='movie.css'>";
-  echo "<link rel='stylesheet' href='https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css' integrity='sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO' crossorigin='anonymous'>";
-  echo "</head>";
-  echo "<body>";
-
-  echo "<div class='jumbotron-fluid'>";
-  echo "<div class='container'>";
-  while ($result = mysqli_fetch_assoc($records)) {
-      $mname = $result['name'];
-      $person = $_SESSION['id'];
-      $movieid = $result['mid'];
-      $current = $result['viewers'];
-      $newcount = $current + 1;
-      $newsql = "UPDATE movies SET viewers = '$newcount' WHERE name='$mname'";
-      $nsql = "UPDATE users SET mid = '$movieid' WHERE id ='$person'";
-      $updatecount = mysqli_query($conn, $newsql);
-      $updatecount = mysqli_query($conn, $nsql);
-
-      $description = ucfirst($result['decription']);
-      $shortDescription = mb_substr($description, 0, 20) . '...';
-
-      echo "<br>";
-      echo "<a href='homepage.php' style='font-size: 15px; color: orange; border: 1px solid orange; border-radius: 5px; padding: 10px; text-decoration: none;'>Về trang chủ</a>";
-      echo "<br><br><h5 style='display: inline;'><br>Tên: </h5><h1 style='display: inline;font-size: 20px'>" . ucwords($result['name']) . "</h1>";
-      echo "<br><h5 style='display: inline;'>Thể loại : </h5><h4 style='display: inline;font-size: 20px'>" . ucwords($result['genre']) . "</h4>";
-      echo "<br><h5 style='display: inline;'>Năm phát hành: </h5><h4 style='display: inline;font-size: 20px'>" . $result['rdate'] . "</h4>";
-      echo "<br><h5 style='display: inline;'>Mô tả : </h5>";
-      echo "<h4 style='display: inline;font-size: 20px'><span id='shortDesc'>$shortDescription</span><span id='fullDesc' style='display: none;'>$description</span>";
-      echo "<a href='javascript:void(0);' id='toggleLink' onclick='toggleDescription()'>Xem thêm</a></h4>";
-      echo "<br><h5 style='display: inline;'>Thời lượng: </h5><h4 style='display: inline;font-size: 20px'>" . $result['runtime'] . " phút</h4>";
-      echo "<br><h5 style='display: inline;'>Lượt xem: </h5><h4 style='display: inline;font-size: 20px'>" . $result['viewers'] . "</h4>";
-
-      echo "<br><br><br>";
-      echo "<div class='embed-responsive embed-responsive-16by9'>";
-      echo "<iframe style='display: inline class='embed-responsive-item' src='video-uploads/" . $result['videopath'] . "' poster='uploads/" . $result['imgpath'] . "' frameborder='0' allowfullscreen></iframe>";
-      echo "</div>";
-  }
-  echo "</div>";
-  echo "</div>";
-
-  echo "<script>
-      function toggleDescription() {
-          var shortDesc = document.getElementById('shortDesc');
-          var fullDesc = document.getElementById('fullDesc');
-          var toggleLink = document.getElementById('toggleLink');
-
-          if (shortDesc.style.display === 'none') {
-              shortDesc.style.display = 'inline';
-              fullDesc.style.display = 'none';
-              toggleLink.innerHTML = 'Xem thêm';
-          } else {
-              shortDesc.style.display = 'none';
-              fullDesc.style.display = 'inline';
-              toggleLink.innerHTML = 'Thu gọn';
-          }
-      }
-  </script>";
-
-  echo "</body>";
-  echo "</html>";
+if ($result->num_rows > 0) {
+    $movie = $result->fetch_assoc();
+} else {
+    echo "Phim không tồn tại.";
+    exit;
 }
+
+// Kiểm tra nếu form đã được gửi
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $movie_id = intval($_POST['movie_id']);
+    $rating = intval($_POST['rating']);
+    $review_content = $conn->real_escape_string($_POST['review_content']);
+    $image_path = "";
+
+    // Kiểm tra tính hợp lệ của số sao (phải nằm trong khoảng 1-5)
+    if ($rating < 1 || $rating > 5) {
+        echo "Vui lòng chọn số sao từ 1 đến 5.";
+        exit;
+    }
+
+    // Kiểm tra xem nội dung hoặc hình ảnh có được nhập hay không
+    if (empty($review_content) && (!isset($_FILES['review_image']) || $_FILES['review_image']['error'] != UPLOAD_ERR_OK)) {
+        echo "Vui lòng nhập nội dung đánh giá hoặc tải lên hình ảnh.";
+        exit;
+    }
+
+    // Xử lý hình ảnh nếu người dùng tải lên
+    if (isset($_FILES['review_image']) && $_FILES['review_image']['error'] == UPLOAD_ERR_OK) {
+        $image_name = basename($_FILES['review_image']['name']);
+        $image_path = 'uploads/reviews/' . $image_name;
+
+        // Di chuyển file vào thư mục uploads/reviews
+        move_uploaded_file($_FILES['review_image']['tmp_name'], $image_path);
+    }
+
+    // Chèn dữ liệu đánh giá vào cơ sở dữ liệu
+    $sql = "INSERT INTO reviews (movie_id, rating, review_content, image_path) VALUES ($movie_id, $rating, '$review_content', '$image_path')";
+
+    if ($conn->query($sql) === TRUE) {
+        echo "Đánh giá đã được gửi thành công!";
+    } else {
+        echo "Lỗi: " . $conn->error;
+    }
+}
+
 ?>
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title><?php echo htmlspecialchars($movie['name']); ?> - Xem Phim</title>
+    <style>
+        /* CSS cơ bản cho giao diện */
+        body { background-color: #333; color: #ccc; font-family: Arial, sans-serif; }
+        .container { width: 80%; margin: 20px auto; }
+        .movie-title { font-size: 24px; color: #fff; }
+        .movie-thumbnail { max-width: 100%; height: auto; border-radius: 8px; }
+        .watch-button { margin-top: 10px; padding: 10px 20px; background-color: #ff5733; color: #fff; border: none; cursor: pointer; }
+        .sidebar { float: right; width: 25%; background-color: #444; padding: 10px; }
+        .sidebar h3 { color: #fff; }
+        .review-form { margin-top: 30px; }
+        .review-form label { display: block; margin-top: 10px; }
+        .review-form input[type="file"], .review-form textarea, .review-form select { width: 100%; padding: 10px; margin-top: 5px; background-color: #555; color: #fff; border: none; }
+        .review-form button { margin-top: 10px; padding: 10px 20px; background-color: #4CAF50; color: #fff; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="movie-detail">
+        <h1 class="movie-title"><?php echo htmlspecialchars($movie['name']); ?> </h1>
+        <img src="uploads/<?php echo $movie['imgpath']; ?>" class="img-fluid" alt="<?php echo htmlspecialchars($movie['name']); ?>">
+        <p><?php echo nl2br(htmlspecialchars($movie['description'])); ?></p>
+        
+        <!-- Hiển thị video -->
+        <iframe width="100%" height="400" src="<?php echo $movie['videopath']; ?>" frameborder="0" allowfullscreen></iframe>
+    </div>
+
+    <!-- Form đánh giá phim -->
+    <div class="review-form">
+        <h3>Đánh giá phim</h3>
+        <form action="submit_review.php" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="movie_id" value="<?php echo $movieId; ?>">
+
+            <label for="rating">Số sao (1-5):</label>
+            <select name="rating" id="rating" required>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+            </select>
+
+            <label for="review_content">Nội dung đánh giá:</label>
+            <textarea name="review_content" id="review_content" rows="4" required></textarea>
+
+            <label for="review_image">Thêm hình ảnh (tuỳ chọn):</label>
+            <input type="file" name="review_image" id="review_image" accept="image/*">
+
+            <button type="submit">Gửi đánh giá</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function watchMovie(movieId) {
+        alert("Bắt đầu xem phim ngay!");
+        // Ở đây bạn có thể thêm logic để chuyển hướng hoặc xử lý khi người dùng nhấn vào nút xem phim
+    }
+</script>
+</body>
+</html>
+
+
