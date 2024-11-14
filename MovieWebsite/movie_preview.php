@@ -1,6 +1,6 @@
 <?php
 include 'dbh.php';
-session_start();
+include 'header.php';
 
 if (!isset($_GET['movie_id'])) {
     echo "Phim không tồn tại!";
@@ -111,7 +111,7 @@ if (!$related_movies_result) {
         }
         .toast {
             position: fixed;
-            top: 20px;
+            top: 40px;
             right: 20px;
             min-width: 250px;
             z-index: 1050;
@@ -157,7 +157,7 @@ if (!$related_movies_result) {
         <div class="row">
             <?php while ($related_movie = mysqli_fetch_assoc($related_movies_result)): ?>
                 <div class="col-md-3 text-center">
-                    <a href="movie.php?movie_id=<?php echo $related_movie['mid']; ?>">
+                    <a href="movie_preview.php?movie_id=<?php echo $related_movie['mid']; ?>">
                         <img src="uploads/<?php echo $related_movie['imgpath']; ?>" class="img-fluid" alt="<?php echo htmlspecialchars($related_movie['name']); ?>">
                     </a>
                     <h5 class="mt-2"><?php echo ucwords($related_movie['name']); ?></h5>
@@ -216,3 +216,7 @@ if (!$related_movies_result) {
 
 </body>
 </html>
+
+<?php
+    include 'footer.php';
+?>

@@ -1,6 +1,6 @@
 <?php
 include 'dbh.php';
-session_start();
+include 'header.php';
 
 // Lấy thông tin phim theo ID
 $movieId = isset($_GET['id']) ? intval($_GET['id']) : 0;
@@ -113,17 +113,85 @@ if (!$related_movies_result) {
         .pagination { text-align: center; margin-top: 20px; }
         .pagination a, .pagination button { padding: 8px 12px; margin: 0 5px; background-color: #333; color: #ff5733; border: none; border-radius: 5px; cursor: pointer; }
         .pagination a:hover, .pagination button:hover { background-color: #444; }
+        .movie-detail {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.movie-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.movie-image {
+    flex: 1;
+    max-width: 150px;
+}
+
+.movie-image img {
+    width: 100%;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.movie-info {
+    flex: 2;
+}
+
+.movie-title {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+    margin: 0;
+    margin-bottom: 10px;
+}
+
+.movie-info p {
+    font-size: 1rem;
+    color: #666;
+    line-height: 1.6;
+}
+
+.movie-info strong {
+    color: var(--primary-color);
+}
+
+.movie-video {
+    margin-top: 20px;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.movie-video iframe {
+    width: 100%;
+    height: 400px;
+    border-radius: 10px;
+}
+
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
 </head>
 <body>
 <div class="container">
-    <div class="movie-detail">
-        <h1 class="movie-title"><?php echo htmlspecialchars($movie['name']); ?> </h1>
-        <img src="uploads/<?php echo $movie['imgpath']; ?>" class="img-fluid" alt="<?php echo htmlspecialchars($movie['name']); ?>">
-        <p><?php echo nl2br(htmlspecialchars($movie['description'])); ?></p>
-        <iframe width="100%" height="400" src="<?php echo $movie['videopath']; ?>" frameborder="0" allowfullscreen></iframe>
+<div class="movie-detail">
+    <div class="movie-header">
+        <div class="movie-image">
+            <img src="uploads/<?php echo $movie['imgpath']; ?>" class="img-fluid" alt="<?php echo htmlspecialchars($movie['name']); ?>">
+        </div>
+        <div class="movie-info">
+            <h1 class="movie-title"><?php echo htmlspecialchars($movie['name']); ?></h1>
+            <p><strong>Mô tả:</strong> <?php echo $movie['description']; ?></p>
+        </div>
     </div>
+    <div class="movie-video">
+        <iframe src="<?php echo $movie['videopath']; ?>" frameborder="0" allowfullscreen></iframe>
+    </div>
+</div>
+
 
     <!-- Form đánh giá phim -->
     <div class="review-form">
@@ -238,7 +306,7 @@ if (!$related_movies_result) {
                 </div>
                 <div class="review-footer">
                     Đánh giá vào: ngay
-                    <a href="javascript:void(0);" onclick="editReview(${data.id})">Sửa</a> | <a href="javascript:void(0);" onclick="deleteReview(${data.id})">Xóa</a>
+                    <a href="javascript:void(0);" onclick="deleteReview(${data.id})">Xóa</a>
                 </div>
             `;
             document.querySelector(".reviews").appendChild(reviewItem);
@@ -271,4 +339,8 @@ if (!$related_movies_result) {
 </script>
 </body>
 </html>
+
+<?php
+    include 'footer.php';
+?>
 

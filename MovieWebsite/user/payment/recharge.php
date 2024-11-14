@@ -1,6 +1,5 @@
 <?php
 session_start();
-
 include '../../dbh.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -67,36 +66,163 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         header('Location: ' . $vnp_Url);
         exit();
     } else {
-        echo "<p>Số tiền không hợp lệ. Vui lòng thử lại.</p>";
+        echo "<p class='text-danger'>Số tiền không hợp lệ. Vui lòng thử lại.</p>";
     }
 }
 ?>
 
-<!DOCTYPE html>
+<!DOC<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trang Xem Phim - Nạp Tiền</title>
-    <link rel="stylesheet" href="recharge.css" type="text/css">
-
+    <title>Nạp Tiền - Movie Website</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            background: rgba(255, 255, 255, 0.95);
+        }
+        
+        .card-header {
+            background: transparent;
+            border-bottom: 2px solid #eee;
+            padding: 25px;
+        }
+        
+        .card-header h4 {
+            color: #2a5298;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .card-body {
+            padding: 30px;
+        }
+        
+        .amount-option {
+            display: none;
+        }
+        
+        .amount-label {
+            display: block;
+            padding: 15px;
+            margin: 10px 0;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .amount-option:checked + .amount-label {
+            border-color: #2a5298;
+            background-color: #f8f9ff;
+        }
+        
+        .amount-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .amount-value {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #2a5298;
+        }
+        
+        .submit-btn {
+            background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
+            border: none;
+            padding: 12px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .payment-icon {
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+        }
+        
+        .security-notice {
+            font-size: 0.9em;
+            color: #666;
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card">
+                    <div class="card-header text-center">
+                        <h4><i class="fas fa-wallet mr-2"></i>Nạp Tiền Vào Tài Khoản</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-4">
+                            <img src="https://sandbox.vnpayment.vn/paymentv2/Images/brands/logo.svg" alt="VNPAY" height="40" class="mb-3">
+                            <p class="text-muted">Chọn số tiền bạn muốn nạp vào tài khoản</p>
+                        </div>
+                        
+                        <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="POST" class="recharge-form">
+                            <div class="form-group">
+                                <?php
+                                $amounts = [
+                                    10000 => '10.000đ',
+                                    50000 => '50.000đ',
+                                    100000 => '100.000đ',
+                                    200000 => '200.000đ',
+                                    500000 => '500.000đ'
+                                ];
+                                
+                                foreach ($amounts as $value => $display) {
+                                    echo "
+                                    <div class='amount-container'>
+                                        <input type='radio' name='amount' id='amount_$value' value='$value' class='amount-option' required>
+                                        <label for='amount_$value' class='amount-label d-flex justify-content-between align-items-center'>
+                                            <span class='amount-value'>$display</span>
+                                            <i class='fas fa-check-circle text-success'></i>
+                                        </label>
+                                    </div>";
+                                }
+                                ?>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-block submit-btn">
+                                <i class="fas fa-lock mr-2"></i>Tiến Hành Thanh Toán
+                            </button>
+                        </form>
+                        
+                        <div class="security-notice">
+                            <i class="fas fa-shield-alt mr-2"></i>
+                            Giao dịch được bảo mật bởi VNPAY
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<div class="recharge-container">
-    <h2>Nạp Tiền</h2>
-    <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="POST" class="recharge-form">
-        <label for="amount">Chọn số tiền nạp:</label>
-        <select name="amount" id="amount" required>
-            <option value="10000">10.000đ</option>
-            <option value="50000">50.000đ</option>
-            <option value="100000">100.000đ</option>
-            <option value="200000">200.000đ</option>
-            <option value="500000">500.000đ</option>
-        </select>
-        <button type="submit">Nạp Tiền</button>
-    </form>
-</div>
-
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

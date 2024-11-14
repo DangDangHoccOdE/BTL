@@ -8,7 +8,7 @@ if (isset($_SESSION['payment_status'])) {
         <div class='payment-container success'>
             <h1>Thanh toán thành công!</h1>
             <p>Cảm ơn quý khách đã thanh toán. Số tiền {$amount} VND đã được thêm vào tài khoản của quý khách.</p>
-            <a href='recharge.php' class='btn'>Trở về trang xem phim</a>
+            <a href='../../index.php' class='btn'>Trở về trang xem phim</a>
         </div>";
     } else {
         $errorCode = $_SESSION['payment_error_code'];

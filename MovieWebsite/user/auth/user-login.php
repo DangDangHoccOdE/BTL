@@ -7,12 +7,12 @@
   $username = '';
 
   // Kiểm tra nếu form đã được gửi
-  if (isset($_POST['id']) && isset($_POST['pass'])) {
-      $username = $_POST['id'];
+  if (isset($_POST['mail']) && isset($_POST['pass'])) {
+      $username = $_POST['mail'];
       $password = $_POST['pass'];
 
       // Cẩn thận với SQL Injection: sử dụng prepared statements
-      $sql = "SELECT * FROM users WHERE id = ?";
+      $sql = "SELECT * FROM users WHERE username = ?";
       $stmt = $conn->prepare($sql);
       $stmt->bind_param("s", $username); // "s" biểu thị chuỗi
       $stmt->execute();
@@ -21,6 +21,7 @@
       if ($row = $result->fetch_assoc()) {
           // Kiểm tra mật khẩu đã mã hóa
           if (password_verify($password, $row['passwd'])) {
+            echo "Đăng nhập thành công!";
               // Mật khẩu đúng, lưu id vào session và chuyển hướng
               $_SESSION['id'] = $row['id'];
               $_SESSION['role'] = $row['role'];
